@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 
 from models import presupuesto_model
 from models.calculations import calcular_escenario_completo
-from models.config_model import obtener_configuracion
+from models.config_model import obtener_catalogo_presets, obtener_configuracion
 from models.schemas import CalculoEscenarioRequest, PresupuestoCreate, PresupuestoUpdate
 from services.export_service import generar_excel_presupuesto
 from views import templates
@@ -20,6 +20,7 @@ router = APIRouter()
 async def dashboard(request: Request, q: str = Query(default="")):
     presupuestos = presupuesto_model.obtener_todos(q or None)
     return templates.TemplateResponse(
+        request,
         "dashboard.html",
         {
             "request": request,
@@ -32,6 +33,7 @@ async def dashboard(request: Request, q: str = Query(default="")):
 @router.get("/presupuestos/nuevo", response_class=HTMLResponse)
 async def formulario_nuevo_presupuesto(request: Request):
     configuracion = obtener_configuracion()
+    presets_costos = obtener_catalogo_presets(configuracion)
     presupuesto_inicial = {
         "nombre_proyecto": "",
         "cliente": "",
@@ -59,12 +61,14 @@ async def formulario_nuevo_presupuesto(request: Request):
         ],
     }
     return templates.TemplateResponse(
+        request,
         "presupuesto_form.html",
         {
             "request": request,
             "modo": "crear",
             "presupuesto": presupuesto_inicial,
             "configuracion": configuracion,
+            "presets_costos": presets_costos,
         },
     )
 
@@ -87,6 +91,7 @@ async def ver_presupuesto(request: Request, presupuesto_id: str):
     if presupuesto is None:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado.")
     return templates.TemplateResponse(
+        request,
         "presupuesto_detail.html",
         {
             "request": request,
@@ -101,13 +106,16 @@ async def editar_presupuesto(request: Request, presupuesto_id: str):
     if presupuesto is None:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado.")
     configuracion = obtener_configuracion()
+    presets_costos = obtener_catalogo_presets(configuracion)
     return templates.TemplateResponse(
+        request,
         "presupuesto_form.html",
         {
             "request": request,
             "modo": "editar",
             "presupuesto": presupuesto,
             "configuracion": configuracion,
+            "presets_costos": presets_costos,
         },
     )
 

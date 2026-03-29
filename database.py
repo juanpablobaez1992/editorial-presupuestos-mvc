@@ -74,6 +74,9 @@ def init_database() -> None:
             "tipo_de_cambio": "1400",
             "tarifa_edicion_por_pagina": "800",
             "tarifa_escaneo_por_pagina": "500",
+            "preset_isbn": "50000",
+            "preset_banner": "70000",
+            "preset_diseno_tapas": "50000",
         }
         connection.executemany(
             """

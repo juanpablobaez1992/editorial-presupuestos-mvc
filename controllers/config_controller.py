@@ -15,6 +15,7 @@ router = APIRouter()
 async def ver_configuracion(request: Request):
     configuracion = obtener_configuracion()
     return templates.TemplateResponse(
+        request,
         "config.html",
         {
             "request": request,

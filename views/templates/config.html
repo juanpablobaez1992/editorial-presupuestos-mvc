@@ -14,7 +14,7 @@
     </p>
 </section>
 
-<form id="config-form" class="max-w-3xl rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
+<form id="config-form" class="max-w-5xl rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
     <div class="grid gap-4 md:grid-cols-3">
         <label class="field">
             <span>Tipo de cambio</span>
@@ -27,6 +27,29 @@
         <label class="field">
             <span>Tarifa escaneo por pagina</span>
             <input type="number" min="0" step="0.01" name="tarifa_escaneo_por_pagina" value="{{ configuracion.tarifa_escaneo_por_pagina }}" required>
+        </label>
+    </div>
+
+    <div class="mt-8">
+        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-black/45">Presets inteligentes</p>
+        <h2 class="mt-2 text-2xl font-black">Costos rapidos para items frecuentes</h2>
+        <p class="mt-2 text-sm text-black/60">
+            Estos montos se usan en el formulario para insertar o actualizar ISBN, banner y diseño de tapas con un clic.
+        </p>
+    </div>
+
+    <div class="mt-4 grid gap-4 md:grid-cols-3">
+        <label class="field">
+            <span>Preset ISBN</span>
+            <input type="number" min="0" step="0.01" name="preset_isbn" value="{{ configuracion.preset_isbn }}" required>
+        </label>
+        <label class="field">
+            <span>Preset banner</span>
+            <input type="number" min="0" step="0.01" name="preset_banner" value="{{ configuracion.preset_banner }}" required>
+        </label>
+        <label class="field">
+            <span>Preset diseño tapas</span>
+            <input type="number" min="0" step="0.01" name="preset_diseno_tapas" value="{{ configuracion.preset_diseno_tapas }}" required>
         </label>
     </div>
 
@@ -46,7 +69,10 @@
         const payload = {
             tipo_de_cambio: Number(form.tipo_de_cambio.value || 0),
             tarifa_edicion_por_pagina: Number(form.tarifa_edicion_por_pagina.value || 0),
-            tarifa_escaneo_por_pagina: Number(form.tarifa_escaneo_por_pagina.value || 0)
+            tarifa_escaneo_por_pagina: Number(form.tarifa_escaneo_por_pagina.value || 0),
+            preset_isbn: Number(form.preset_isbn.value || 0),
+            preset_banner: Number(form.preset_banner.value || 0),
+            preset_diseno_tapas: Number(form.preset_diseno_tapas.value || 0)
         };
 
         try {

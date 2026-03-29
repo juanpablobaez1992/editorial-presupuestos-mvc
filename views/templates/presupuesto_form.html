@@ -54,6 +54,29 @@
                 Agregar segundo escenario
             </button>
         </div>
+        <div class="mb-5 rounded-[1.6rem] border border-black/10 bg-hoja p-4">
+            <div class="mb-3 flex flex-col gap-1">
+                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-black/45">Presets inteligentes</p>
+                <h3 class="text-xl font-black">ISBN, banner y diseño de tapas listos para insertar</h3>
+                <p class="text-sm text-black/60">Cada boton aplica o actualiza el item en el escenario con el monto configurado globalmente.</p>
+            </div>
+            <div class="grid gap-3 md:grid-cols-3">
+                {% for preset in presets_costos %}
+                <article class="rounded-[1.25rem] border border-black/10 bg-white p-4">
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-ladrillo">{{ preset.nombre }}</p>
+                    <p class="mt-2 text-2xl font-black">{{ preset.monto | ars }}</p>
+                    <p class="mt-2 text-sm text-black/60">{{ preset.descripcion }}</p>
+                    <button
+                        type="button"
+                        class="preset-global-btn mt-4 w-full rounded-full border border-black/10 px-4 py-3 text-sm font-semibold transition hover:border-bosque hover:text-bosque"
+                        data-preset-clave="{{ preset.clave }}"
+                    >
+                        Aplicar a un escenario
+                    </button>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
         <div id="escenarios-container" class="grid gap-6 xl:grid-cols-2"></div>
     </section>
 
@@ -176,6 +199,7 @@
 <script>
     const NOTA_IMPRESION = "Cotizado manualmente en https://print.livriz.com";
     const configuracion = {{ configuracion | tojson }};
+    const presetsCostos = {{ presets_costos | tojson }};
     const presupuestoInicial = {{ presupuesto | tojson }};
     const modoFormulario = "{{ modo }}";
     const presupuestoId = "{{ presupuesto.id if presupuesto.id else '' }}";
@@ -187,6 +211,10 @@
 
     function esItemImpresion(nombre) {
         return String(nombre || "").toLowerCase().includes("impres");
+    }
+
+    function obtenerDefinicionPreset(clave) {
+        return presetsCostos.find((preset) => preset.clave === clave) || null;
     }
 
     function crearInputItem(item = {}) {
@@ -254,6 +282,18 @@
         row.querySelector('[data-field="nota"]').classList.remove("opacity-70");
     }
 
+    function aplicarPresetCosto(card, clavePreset) {
+        const preset = obtenerDefinicionPreset(clavePreset);
+        if (!preset) {
+            mostrarToast("No se encontro el preset solicitado.", "error");
+            return;
+        }
+        const itemsContainer = card.querySelector(".items-container");
+        upsertItemTarifado(itemsContainer, preset.nombre, Number(preset.monto || 0), preset.nota || "");
+        programarPreview();
+        mostrarToast(`${preset.nombre} aplicado en ${card.querySelector('[data-field="nombre"]').value || "el escenario"}.`);
+    }
+
     function crearEscenarioCard(escenario = {}) {
         const fragment = escenarioTemplate.content.cloneNode(true);
         const card = fragment.querySelector(".escenario-card");
@@ -310,6 +350,26 @@
         });
 
         return card;
+    }
+
+    function seleccionarEscenarioYAplicarPreset(clavePreset) {
+        const cards = Array.from(escenariosContainer.children);
+        if (!cards.length) {
+            mostrarToast("Primero crea al menos un escenario.", "error");
+            return;
+        }
+        if (cards.length === 1) {
+            aplicarPresetCosto(cards[0], clavePreset);
+            return;
+        }
+        const nombres = cards.map((card, index) => `${index + 1}. ${card.querySelector('[data-field="nombre"]').value || `Escenario ${index + 1}`}`);
+        const seleccion = window.prompt(`Indica el numero del escenario donde quieres aplicar el preset:\n${nombres.join("\n")}`, "1");
+        const indice = Number(seleccion) - 1;
+        if (!Number.isInteger(indice) || indice < 0 || indice >= cards.length) {
+            mostrarToast("No se aplico el preset porque la seleccion no fue valida.", "error");
+            return;
+        }
+        aplicarPresetCosto(cards[indice], clavePreset);
     }
 
     function refrescarBotonEscenario() {
@@ -400,6 +460,10 @@
         }));
         refrescarBotonEscenario();
         programarPreview();
+    });
+
+    document.querySelectorAll(".preset-global-btn").forEach((button) => {
+        button.addEventListener("click", () => seleccionarEscenarioYAplicarPreset(button.dataset.presetClave));
     });
 
     form.addEventListener("submit", async (event) => {

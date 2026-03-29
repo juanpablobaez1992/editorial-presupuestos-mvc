@@ -137,6 +137,9 @@ class ConfiguracionBase(BaseModel):
     tipo_de_cambio: float = Field(..., gt=0)
     tarifa_edicion_por_pagina: float = Field(..., ge=0)
     tarifa_escaneo_por_pagina: float = Field(..., ge=0)
+    preset_isbn: float = Field(..., ge=0)
+    preset_banner: float = Field(..., ge=0)
+    preset_diseno_tapas: float = Field(..., ge=0)
 
 
 class ConfiguracionUpdate(ConfiguracionBase):
