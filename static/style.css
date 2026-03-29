@@ -28,8 +28,15 @@ body {
     border: 1px solid rgba(18, 38, 32, 0.12);
     background: #fffdfa;
     padding: 0.9rem 1rem;
+    color: #122620;
+    caret-color: #122620;
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+    color: rgba(18, 38, 32, 0.4);
 }
 
 .field textarea {
@@ -41,6 +48,16 @@ body {
 .field textarea:focus {
     border-color: rgba(54, 89, 73, 0.65);
     box-shadow: 0 0 0 4px rgba(54, 89, 73, 0.08);
+}
+
+.field-oscuro span {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.field-oscuro input,
+.field-oscuro textarea {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 253, 250, 0.98);
 }
 
 .escenario-card,

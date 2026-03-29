@@ -43,13 +43,13 @@
 
         <form method="post" action="/login" class="mt-6 grid gap-4">
             <input type="hidden" name="next" value="{{ next }}">
-            <label class="field">
+            <label class="field field-oscuro">
                 <span>Usuario</span>
-                <input type="text" name="username" autocomplete="username" required>
+                <input type="text" name="username" autocomplete="username" placeholder="Usuario" required>
             </label>
-            <label class="field">
-                <span>Contraseña</span>
-                <input type="password" name="password" autocomplete="current-password" required>
+            <label class="field field-oscuro">
+                <span>Contrasena</span>
+                <input type="password" name="password" autocomplete="current-password" placeholder="Contrasena" required>
             </label>
             <button class="mt-2 rounded-full bg-bosque px-6 py-3 font-semibold text-white transition hover:bg-[#25473a]">
                 Ingresar
