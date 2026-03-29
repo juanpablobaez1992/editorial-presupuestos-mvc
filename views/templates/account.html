@@ -3,104 +3,139 @@
 {% block title %}Mi cuenta{% endblock %}
 
 {% block content %}
-<section class="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
-    <article class="rounded-[2rem] border border-black/10 bg-white p-8 shadow-sm">
-        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-ladrillo">Mi cuenta</p>
-        <h1 class="mt-3 text-4xl font-black leading-tight">Seguridad administrativa y segundo factor en un solo lugar.</h1>
-        <p class="mt-4 max-w-2xl text-black/65">
-            Desde esta pantalla podes rotar la contrasena y administrar TOTP para endurecer el acceso al subdominio.
-        </p>
 
-        <div class="mt-8 grid gap-4 sm:grid-cols-2">
-            <div class="rounded-[1.5rem] bg-hoja p-4">
-                <p class="text-xs uppercase tracking-[0.2em] text-black/45">Usuario activo</p>
-                <p id="cuenta-username" class="mt-2 text-lg font-black">{{ credenciales.username }}</p>
+<!-- Page header ──────────────────────────────────────────────────────────── -->
+<div class="mb-7">
+    <p class="section-eyebrow text-ladrillo mb-2">Mi cuenta</p>
+    <h1 class="text-3xl font-black tracking-tight text-tinta sm:text-4xl">Seguridad y autenticación</h1>
+    <p class="mt-2 max-w-xl text-sm leading-relaxed text-black/50">
+        Rotá la contraseña y administrá TOTP para endurecer el acceso al subdominio.
+    </p>
+</div>
+
+<div class="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+
+    <!-- Left: account info + TOTP status -->
+    <div class="grid gap-5 content-start">
+
+        <!-- Account info card -->
+        <section class="rounded-[2rem] border border-black/[0.07] bg-white p-6 shadow-sm">
+            <p class="section-eyebrow text-black/40 mb-3">Estado de la cuenta</p>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <div class="rounded-2xl border border-black/[0.07] bg-hoja p-4">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/40">Usuario activo</p>
+                    <p id="cuenta-username" class="mt-2 text-lg font-black text-tinta">{{ credenciales.username }}</p>
+                </div>
+                <div class="rounded-2xl border border-black/[0.07] bg-hoja p-4">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/40">Origen</p>
+                    <p id="password-origen" class="mt-2 text-base font-bold text-tinta">
+                        {% if credenciales.origen == "base_de_datos" %}Base de datos{% else %}Entorno{% endif %}
+                    </p>
+                </div>
             </div>
-            <div class="rounded-[1.5rem] bg-hoja p-4">
-                <p class="text-xs uppercase tracking-[0.2em] text-black/45">Origen actual</p>
-                <p id="password-origen" class="mt-2 text-lg font-black">
-                    {% if credenciales.origen == "base_de_datos" %}Base de datos{% else %}Entorno{% endif %}
+        </section>
+
+        <!-- TOTP status card -->
+        <section class="rounded-[2rem] border border-black/[0.07] bg-white p-6 shadow-sm">
+            <p class="section-eyebrow text-black/40 mb-1">Doble factor</p>
+            <h2 class="text-xl font-black text-tinta mb-1">TOTP</h2>
+            <div class="flex items-center gap-2.5 mb-4">
+                <div id="totp-status-dot" class="h-2 w-2 rounded-full {% if totp.habilitado %}bg-emerald-500{% elif totp.secret_present %}bg-mostaza{% else %}bg-black/20{% endif %}"></div>
+                <p class="text-sm text-black/65">
+                    Estado: <strong id="totp-estado-texto" class="font-semibold text-tinta">
+                        {% if totp.habilitado %}Activo{% elif totp.secret_present %}Pendiente de activacion{% else %}Inactivo{% endif %}
+                    </strong>
                 </p>
             </div>
-        </div>
 
-        <div class="mt-6 rounded-[1.6rem] border border-black/10 bg-hoja p-5">
-            <p class="text-xs uppercase tracking-[0.2em] text-black/45">Doble factor</p>
-            <h2 class="mt-2 text-2xl font-black">TOTP</h2>
-            <p class="mt-2 text-black/65">
-                Estado actual:
-                <strong id="totp-estado-texto" class="text-tinta">
-                    {% if totp.habilitado %}Activo{% elif totp.secret_present %}Pendiente de activacion{% else %}Inactivo{% endif %}
-                </strong>
-            </p>
-            <div id="totp-secret-box" class="mt-4 rounded-[1.2rem] border border-black/10 bg-white p-4 {% if not totp.secret_present %}hidden{% endif %}">
-                <p class="text-xs uppercase tracking-[0.2em] text-black/45">Clave manual</p>
-                <p id="totp-manual-key" class="mt-2 break-all text-lg font-black">{{ totp.manual_entry_key }}</p>
-                <p class="mt-2 text-sm text-black/60">Si la app autenticadora no escanea QR, podes cargar esta clave manualmente.</p>
+            <div id="totp-secret-box" class="mb-4 rounded-2xl border border-black/[0.07] bg-hoja p-4 {% if not totp.secret_present %}hidden{% endif %}">
+                <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/40 mb-1.5">Clave manual</p>
+                <p id="totp-manual-key" class="break-all font-mono text-base font-bold text-tinta">{{ totp.manual_entry_key }}</p>
+                <p class="mt-2 text-xs text-black/45">Si la app no escanea QR, podés ingresar esta clave manualmente.</p>
             </div>
-            <div class="mt-4 flex flex-wrap gap-3">
-                <button id="totp-preparar-btn" type="button" class="rounded-full border border-black/10 px-4 py-3 text-sm font-semibold transition hover:border-bosque hover:text-bosque">
-                    Generar secreto TOTP
-                </button>
-            </div>
-        </div>
-    </article>
 
-    <div class="grid gap-6">
-        <article class="rounded-[2rem] border border-black/10 bg-tinta p-8 text-white shadow-sm">
-            <p class="text-sm font-semibold uppercase tracking-[0.25em] text-white/55">Seguridad</p>
-            <h2 class="mt-3 text-3xl font-black">Actualizar contrasena</h2>
-            <p class="mt-3 text-white/70">
-                La nueva contrasena debe tener al menos 12 caracteres, mayusculas, minusculas, numeros y un simbolo.
-            </p>
+            <button id="totp-preparar-btn" type="button" class="btn btn-secondary text-sm">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 1.5v2M7 10.5v2M1.5 7h2M10.5 7h2M3.05 3.05l1.42 1.42M9.53 9.53l1.42 1.42M3.05 10.95l1.42-1.42M9.53 4.47l1.42-1.42"/>
+                </svg>
+                Generar secreto TOTP
+            </button>
+        </section>
 
-            <form id="password-form" class="mt-6 grid gap-4">
-                <label class="field field-oscuro">
-                    <span>Contrasena actual</span>
-                    <input type="password" name="current_password" autocomplete="current-password" required>
-                </label>
-                <label class="field field-oscuro">
-                    <span>Nueva contrasena</span>
-                    <input type="password" name="nueva_password" minlength="12" autocomplete="new-password" required>
-                </label>
-                <label class="field field-oscuro">
-                    <span>Confirmar contrasena</span>
-                    <input type="password" name="confirmar_password" minlength="12" autocomplete="new-password" required>
-                </label>
-                <button class="mt-2 rounded-full bg-bosque px-6 py-3 font-semibold text-white transition hover:bg-[#25473a]">
-                    Guardar nueva contrasena
-                </button>
-            </form>
-        </article>
+        <!-- TOTP enable/disable card -->
+        <section class="rounded-[2rem] border border-black/[0.07] bg-white p-6 shadow-sm">
+            <p class="section-eyebrow text-ladrillo mb-1">Doble factor</p>
+            <h2 class="text-xl font-black text-tinta mb-1">Activar o desactivar TOTP</h2>
+            <p class="mb-5 text-sm text-black/50">Generá el secreto, registralo en tu app autenticadora y validá un código.</p>
 
-        <article class="rounded-[2rem] border border-black/10 bg-white p-8 shadow-sm">
-            <p class="text-sm font-semibold uppercase tracking-[0.25em] text-ladrillo">Doble factor</p>
-            <h2 class="mt-3 text-3xl font-black">Activar o desactivar TOTP</h2>
-            <p class="mt-3 text-black/65">
-                Genera el secreto, registralo en tu app autenticadora y valida un codigo para dejar el segundo factor activo.
-            </p>
-
-            <form id="totp-activar-form" class="mt-6 grid gap-4">
+            <form id="totp-activar-form" class="grid gap-3.5">
                 <label class="field">
-                    <span>Contrasena actual</span>
+                    <span>Contraseña actual</span>
                     <input type="password" name="current_password" autocomplete="current-password" required>
                 </label>
                 <label class="field">
-                    <span>Codigo TOTP</span>
+                    <span>Código TOTP</span>
                     <input type="text" name="codigo" inputmode="numeric" placeholder="123456" required>
                 </label>
-                <div class="flex flex-wrap gap-3">
-                    <button type="submit" class="rounded-full bg-bosque px-5 py-3 font-semibold text-white transition hover:bg-[#25473a]">
+                <div class="flex flex-wrap gap-2.5">
+                    <button type="submit" class="btn btn-primary text-sm">
+                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1.5 7l3.5 3.5 7-7"/>
+                        </svg>
                         Activar TOTP
                     </button>
-                    <button id="totp-desactivar-btn" type="button" class="rounded-full border border-black/10 px-5 py-3 font-semibold transition hover:border-red-400 hover:text-red-700">
-                        Desactivar TOTP
+                    <button id="totp-desactivar-btn" type="button" class="btn btn-secondary text-sm hover:border-red-300 hover:text-red-600">
+                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <path d="M9.5 3.5l-6 6M3.5 3.5l6 6"/>
+                        </svg>
+                        Desactivar
                     </button>
                 </div>
             </form>
-        </article>
+        </section>
     </div>
-</section>
+
+    <!-- Right: change password -->
+    <div>
+        <section class="rounded-[2rem] border border-black/[0.07] bg-tinta p-7 text-white shadow-sm">
+            <div class="mb-5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3.5" y="8" width="11" height="8.5" rx="2.5"/>
+                    <path d="M6 8V6a3 3 0 1 1 6 0v2"/>
+                    <circle cx="9" cy="12" r="1.2" fill="white" stroke="none"/>
+                </svg>
+            </div>
+
+            <p class="section-eyebrow text-white/40 mb-1">Seguridad</p>
+            <h2 class="text-2xl font-black text-white">Actualizar contraseña</h2>
+            <p class="mt-2 mb-5 text-sm leading-relaxed text-white/55">
+                Mínimo 12 caracteres, mayúsculas, minúsculas, números y un símbolo.
+            </p>
+
+            <form id="password-form" class="grid gap-3.5">
+                <label class="field field-oscuro">
+                    <span>Contraseña actual</span>
+                    <input type="password" name="current_password" autocomplete="current-password" required>
+                </label>
+                <label class="field field-oscuro">
+                    <span>Nueva contraseña</span>
+                    <input type="password" name="nueva_password" minlength="12" autocomplete="new-password" required>
+                </label>
+                <label class="field field-oscuro">
+                    <span>Confirmar contraseña</span>
+                    <input type="password" name="confirmar_password" minlength="12" autocomplete="new-password" required>
+                </label>
+                <button type="submit" class="btn mt-1 w-full justify-center bg-bosque text-white hover:bg-[#25473a]">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1.5 7.5l3.5 3.5 7.5-7"/>
+                    </svg>
+                    Guardar nueva contraseña
+                </button>
+            </form>
+        </section>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -108,12 +143,10 @@
     const totpState = {{ totp | tojson }};
 
     function renderTotpState(state) {
-        const text = state.habilitado
-            ? "Activo"
-            : state.secret_present
-                ? "Pendiente de activacion"
-                : "Inactivo";
+        const text = state.habilitado ? "Activo" : state.secret_present ? "Pendiente de activacion" : "Inactivo";
         document.getElementById("totp-estado-texto").textContent = text;
+        const dot = document.getElementById("totp-status-dot");
+        dot.className = `h-2 w-2 rounded-full ${state.habilitado ? "bg-emerald-500" : state.secret_present ? "bg-yellow-400" : "bg-black/20"}`;
         const secretBox = document.getElementById("totp-secret-box");
         const secretText = document.getElementById("totp-manual-key");
         if (state.secret_present) {
@@ -130,31 +163,17 @@
     document.getElementById("password-form").addEventListener("submit", async (event) => {
         event.preventDefault();
         const form = event.currentTarget;
-        const payload = {
-            current_password: form.current_password.value,
-            nueva_password: form.nueva_password.value,
-            confirmar_password: form.confirmar_password.value
-        };
-
+        const payload = { current_password: form.current_password.value, nueva_password: form.nueva_password.value, confirmar_password: form.confirmar_password.value };
         try {
-            const response = await fetch("/mi-cuenta/password", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
+            const response = await fetch("/mi-cuenta/password", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
             const data = await response.json();
-            if (!response.ok) {
-                throw new Error(extraerMensajeError(data, "No se pudo actualizar la contrasena."));
-            }
-
+            if (!response.ok) throw new Error(extraerMensajeError(data, "No se pudo actualizar la contraseña."));
             document.getElementById("cuenta-username").textContent = data.credenciales.username;
-            document.getElementById("password-origen").textContent = data.credenciales.origen === "base_de_datos"
-                ? "Base de datos"
-                : "Entorno";
+            document.getElementById("password-origen").textContent = data.credenciales.origen === "base_de_datos" ? "Base de datos" : "Entorno";
             form.reset();
-            mostrarToast("Contrasena actualizada.");
+            mostrarToast("Contraseña actualizada.");
         } catch (error) {
-            mostrarToast(error.message || "Ocurrio un error.", "error");
+            mostrarToast(error.message || "Ocurrió un error.", "error");
         }
     });
 
@@ -162,64 +181,44 @@
         try {
             const response = await fetch("/mi-cuenta/2fa/preparar", { method: "POST" });
             const data = await response.json();
-            if (!response.ok) {
-                throw new Error(extraerMensajeError(data, "No se pudo preparar TOTP."));
-            }
+            if (!response.ok) throw new Error(extraerMensajeError(data, "No se pudo preparar TOTP."));
             Object.assign(totpState, data.totp);
             renderTotpState(totpState);
-            mostrarToast("Secreto TOTP generado. Cargalo en tu app y luego activa el segundo factor.");
+            mostrarToast("Secreto TOTP generado. Cargalo en tu app y activá el segundo factor.");
         } catch (error) {
-            mostrarToast(error.message || "Ocurrio un error.", "error");
+            mostrarToast(error.message || "Ocurrió un error.", "error");
         }
     });
 
     document.getElementById("totp-activar-form").addEventListener("submit", async (event) => {
         event.preventDefault();
         const form = event.currentTarget;
-        const payload = {
-            current_password: form.current_password.value,
-            codigo: form.codigo.value
-        };
-
+        const payload = { current_password: form.current_password.value, codigo: form.codigo.value };
         try {
-            const response = await fetch("/mi-cuenta/2fa/activar", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
+            const response = await fetch("/mi-cuenta/2fa/activar", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
             const data = await response.json();
-            if (!response.ok) {
-                throw new Error(extraerMensajeError(data, "No se pudo activar TOTP."));
-            }
+            if (!response.ok) throw new Error(extraerMensajeError(data, "No se pudo activar TOTP."));
             Object.assign(totpState, data.totp);
             renderTotpState(totpState);
             form.reset();
             mostrarToast("TOTP activado.");
         } catch (error) {
-            mostrarToast(error.message || "Ocurrio un error.", "error");
+            mostrarToast(error.message || "Ocurrió un error.", "error");
         }
     });
 
     document.getElementById("totp-desactivar-btn").addEventListener("click", async () => {
-        const password = window.prompt("Ingresa tu contrasena actual para desactivar TOTP:");
-        if (!password) {
-            return;
-        }
+        const password = window.prompt("Ingresá tu contraseña actual para desactivar TOTP:");
+        if (!password) return;
         try {
-            const response = await fetch("/mi-cuenta/2fa/desactivar", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ current_password: password })
-            });
+            const response = await fetch("/mi-cuenta/2fa/desactivar", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ current_password: password }) });
             const data = await response.json();
-            if (!response.ok) {
-                throw new Error(extraerMensajeError(data, "No se pudo desactivar TOTP."));
-            }
+            if (!response.ok) throw new Error(extraerMensajeError(data, "No se pudo desactivar TOTP."));
             Object.assign(totpState, data.totp);
             renderTotpState(totpState);
             mostrarToast("TOTP desactivado.");
         } catch (error) {
-            mostrarToast(error.message || "Ocurrio un error.", "error");
+            mostrarToast(error.message || "Ocurrió un error.", "error");
         }
     });
 </script>

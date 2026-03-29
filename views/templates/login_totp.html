@@ -1,37 +1,82 @@
 {% extends "base.html" %}
 
-{% block title %}Verificacion TOTP{% endblock %}
+{% block title %}Verificacion TOTP | Presupuestos{% endblock %}
 
 {% block content %}
-<section class="mx-auto grid max-w-4xl gap-8 lg:grid-cols-[1fr_0.9fr]">
-    <article class="rounded-[2rem] border border-black/10 bg-white p-8 shadow-sm">
-        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-ladrillo">Segundo factor</p>
-        <h1 class="mt-3 text-4xl font-black leading-tight">Confirma tu ingreso con el codigo de tu app autenticadora.</h1>
-        <p class="mt-4 max-w-2xl text-black/65">
-            La cuenta <strong>{{ pending_user }}</strong> tiene TOTP activo. Abri Google Authenticator, Authy o la app que uses y escribi el codigo de 6 digitos para terminar el login.
-        </p>
-    </article>
+<div class="mx-auto flex min-h-[calc(100vh-10rem)] max-w-4xl items-center">
+    <div class="grid w-full gap-6 lg:grid-cols-[1fr_1fr]">
 
-    <article class="rounded-[2rem] border border-black/10 bg-tinta p-8 text-white shadow-sm">
-        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-white/55">TOTP</p>
-        <h2 class="mt-3 text-3xl font-black">Verificar acceso</h2>
+        <!-- Left: info -->
+        <div class="flex flex-col justify-center">
+            <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-bosque shadow-md">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="10" width="14" height="10" rx="2.5"/>
+                    <path d="M7.5 10V7a3.5 3.5 0 1 1 7 0v3"/>
+                    <circle cx="11" cy="15" r="1.2" fill="white" stroke="none"/>
+                </svg>
+            </div>
 
-        {% if error %}
-        <div class="mt-5 rounded-[1.25rem] border border-red-300/50 bg-red-50 px-4 py-3 text-sm font-semibold text-red-900">
-            {{ error }}
+            <p class="section-eyebrow text-ladrillo mb-3">Segundo factor</p>
+            <h1 class="text-3xl font-black leading-tight tracking-tight text-tinta sm:text-4xl">
+                Confirma tu acceso con TOTP.
+            </h1>
+            <p class="mt-4 text-sm leading-relaxed text-black/55">
+                La cuenta <strong class="font-bold text-tinta">{{ pending_user }}</strong> tiene autenticacion de dos factores activa.
+                Abrí tu app (Google Authenticator, Authy, etc.) y escribí el código de 6 dígitos.
+            </p>
+
+            <div class="mt-8 rounded-2xl border border-black/[0.07] bg-white p-5 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-[0.15em] text-black/40">¿No tenés el código?</p>
+                <p class="mt-2 text-sm text-black/60 leading-relaxed">
+                    El código TOTP se renueva cada 30 segundos. Si perdiste acceso a tu app autenticadora, contactá al administrador del sistema.
+                </p>
+            </div>
         </div>
-        {% endif %}
 
-        <form method="post" action="/login/2fa" class="mt-6 grid gap-4">
-            <input type="hidden" name="next" value="{{ next }}">
-            <label class="field field-oscuro">
-                <span>Codigo</span>
-                <input type="text" name="codigo" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" required>
-            </label>
-            <button class="mt-2 rounded-full bg-bosque px-6 py-3 font-semibold text-white transition hover:bg-[#25473a]">
-                Validar codigo
-            </button>
-        </form>
-    </article>
-</section>
+        <!-- Right: TOTP form -->
+        <div class="rounded-[2rem] border border-black/[0.07] bg-tinta p-7 shadow-lg sm:p-8">
+            <p class="section-eyebrow text-white/40 mb-1">TOTP</p>
+            <h2 class="text-2xl font-black text-white">Verificar acceso</h2>
+            <p class="mt-2 text-sm text-white/55">Código de 6 dígitos de tu app autenticadora.</p>
+
+            {% if error %}
+            <div class="mt-4 flex items-start gap-3 rounded-2xl border border-red-300/40 bg-red-500/10 px-4 py-3">
+                <svg class="mt-0.5 shrink-0" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fca5a5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="7" cy="7" r="5.5"/>
+                    <path d="M7 4.5v3M7 9.5v.5"/>
+                </svg>
+                <p class="text-sm font-medium text-red-200">{{ error }}</p>
+            </div>
+            {% endif %}
+
+            <form method="post" action="/login/2fa" class="mt-6 grid gap-4">
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <label class="field field-oscuro">
+                    <span>Código TOTP</span>
+                    <input
+                        type="text"
+                        name="codigo"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        placeholder="123456"
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                        required
+                        autofocus
+                        class="text-center text-2xl font-black tracking-[0.5em]"
+                    >
+                </label>
+
+                <button type="submit" class="btn btn-primary mt-1 w-full justify-center py-3 text-sm">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1.5 7l3.5 3.5 7.5-7"/>
+                    </svg>
+                    Validar código
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
 {% endblock %}

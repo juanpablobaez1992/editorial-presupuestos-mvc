@@ -3,81 +3,119 @@
 {% block title %}{{ presupuesto.nombre_proyecto }}{% endblock %}
 
 {% block content %}
-<section class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+
+<!-- Page header ──────────────────────────────────────────────────────────── -->
+<div class="mb-7 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
     <div>
-        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-ladrillo">Detalle</p>
-        <h1 class="mt-2 text-4xl font-black">{{ presupuesto.nombre_proyecto }}</h1>
-        <div class="mt-3 flex flex-wrap gap-3 text-sm text-black/60">
-            <span>Cliente: <strong class="text-tinta">{{ presupuesto.cliente }}</strong></span>
-            <span>Fecha: <strong class="text-tinta">{{ presupuesto.fecha }}</strong></span>
-            <span>{{ presupuesto.cantidad_escenarios }} escenario{% if presupuesto.cantidad_escenarios != 1 %}s{% endif %}</span>
+        <p class="section-eyebrow text-ladrillo mb-2">Detalle</p>
+        <h1 class="text-3xl font-black tracking-tight text-tinta sm:text-4xl">{{ presupuesto.nombre_proyecto }}</h1>
+        <div class="mt-3 flex flex-wrap items-center gap-2.5">
+            <span class="badge badge-tinta">
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="4" cy="3" r="2"/>
+                    <path d="M0.5 9.5c0-2.21 1.79-3.5 3.5-3.5M8 6v4M6 8h4"/>
+                </svg>
+                {{ presupuesto.cliente }}
+            </span>
+            <span class="badge badge-tinta">
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="2" width="9" height="8" rx="1.5"/>
+                    <path d="M3.5 1v2M7.5 1v2M1 6h9"/>
+                </svg>
+                {{ presupuesto.fecha }}
+            </span>
+            <span class="badge badge-bosque">{{ presupuesto.cantidad_escenarios }} escenario{% if presupuesto.cantidad_escenarios != 1 %}s{% endif %}</span>
             {% if presupuesto.tipo_proyecto_clave %}
-            <span>Tipo: <strong class="text-tinta">{{ presupuesto.tipo_proyecto_clave | replace("_", " ") | title }}</strong></span>
+            <span class="badge badge-ladrillo">{{ presupuesto.tipo_proyecto_clave | replace("_", " ") | title }}</span>
             {% endif %}
         </div>
     </div>
-    <div class="flex flex-wrap gap-3">
-        <a href="/presupuestos/{{ presupuesto.id }}/editar" class="rounded-full border border-black/10 px-4 py-3 font-semibold transition hover:border-ladrillo hover:text-ladrillo">Editar</a>
-        <a href="/presupuestos/{{ presupuesto.id }}/export" class="rounded-full border border-black/10 px-4 py-3 font-semibold transition hover:border-mostaza hover:text-ladrillo">Exportar XLSX</a>
-        <a href="/presupuestos/{{ presupuesto.id }}/export/pdf" class="rounded-full border border-black/10 px-4 py-3 font-semibold transition hover:border-bosque hover:text-bosque">Exportar PDF</a>
-        <button id="duplicar-btn" class="rounded-full border border-black/10 px-4 py-3 font-semibold transition hover:border-bosque hover:text-bosque">Duplicar</button>
-        <button id="eliminar-btn" class="rounded-full bg-[#8f332a] px-4 py-3 font-semibold text-white transition hover:bg-[#722920]">Eliminar</button>
-    </div>
-</section>
 
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="/presupuestos/{{ presupuesto.id }}/editar" class="btn btn-secondary text-sm">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 1.5a1.41 1.41 0 0 1 2 2L4 11l-3 .5.5-3L9 1.5z"/>
+            </svg>
+            Editar
+        </a>
+        <a href="/presupuestos/{{ presupuesto.id }}/export" class="btn btn-secondary text-sm hover:border-mostaza hover:text-[#9a6e1a]">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 8v3a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8M6.5 1v7M4.5 6l2 2 2-2"/>
+            </svg>
+            XLSX
+        </a>
+        <a href="/presupuestos/{{ presupuesto.id }}/export/pdf" class="btn btn-secondary text-sm">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7 1H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5L7 1z"/>
+                <path d="M7 1v4h4"/>
+            </svg>
+            PDF
+        </a>
+        <button id="duplicar-btn" class="btn btn-secondary text-sm">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4.5" y="4.5" width="7" height="7" rx="1.5"/>
+                <path d="M8.5 4.5v-2a1 1 0 0 0-1-1h-5a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h2"/>
+            </svg>
+            Duplicar
+        </button>
+        <button id="eliminar-btn" class="btn btn-danger text-sm">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1.5 3.5h10M5 3.5V2h3v1.5M4.5 3.5v7a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-7"/>
+            </svg>
+            Eliminar
+        </button>
+    </div>
+</div>
+
+<!-- Notes ────────────────────────────────────────────────────────────────── -->
 {% if presupuesto.notas %}
-<section class="mb-6 rounded-[1.8rem] border border-black/10 bg-white p-5 shadow-sm">
-    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-black/45">Notas</p>
-    <p class="mt-2 text-black/70">{{ presupuesto.notas }}</p>
-</section>
+<div class="mb-5 rounded-2xl border border-black/[0.07] bg-white px-5 py-4 shadow-sm">
+    <p class="section-eyebrow text-black/40 mb-1.5">Notas</p>
+    <p class="text-sm leading-relaxed text-black/65">{{ presupuesto.notas }}</p>
+</div>
 {% endif %}
 
+<!-- Version history ───────────────────────────────────────────────────────── -->
 {% if presupuesto.versiones %}
-<section class="mb-6 rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
-    <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+<section class="mb-6 rounded-[2rem] border border-black/[0.07] bg-white p-6 shadow-sm">
+    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-ladrillo">Historial</p>
-            <h2 class="mt-2 text-3xl font-black">Versiones del presupuesto</h2>
-            <p class="mt-2 text-black/60">
-                Cada guardado crea una snapshot con responsable y cambios clave para poder auditar o volver atras.
-            </p>
+            <p class="section-eyebrow text-ladrillo mb-1">Historial</p>
+            <h2 class="text-xl font-black text-tinta">Versiones del presupuesto</h2>
+            <p class="mt-1 text-xs text-black/45">Cada guardado crea una snapshot auditable.</p>
         </div>
-        <div class="rounded-[1.2rem] bg-hoja px-4 py-3 text-sm text-black/60">
-            <strong class="text-tinta">{{ presupuesto.versiones | length }}</strong>
-            version{% if presupuesto.versiones|length != 1 %}es{% endif %} registradas
-        </div>
+        <span class="badge badge-tinta self-start sm:self-auto">
+            {{ presupuesto.versiones | length }} version{% if presupuesto.versiones|length != 1 %}es{% endif %}
+        </span>
     </div>
 
-    <div class="mt-6 grid gap-4">
+    <div class="grid gap-3">
         {% for version in presupuesto.versiones %}
-        <article class="rounded-[1.5rem] border border-black/10 p-4 {% if version.es_actual %}bg-hoja{% else %}bg-white{% endif %}">
-            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div class="min-w-0">
+        <article class="rounded-2xl border p-4 {% if version.es_actual %}border-bosque/20 bg-bosque/5{% else %}border-black/[0.07] bg-hoja/60{% endif %}">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="rounded-full bg-tinta px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-                            Version {{ version.version_num }}
-                        </span>
-                        <span class="rounded-full border border-black/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-black/60">
-                            {{ version.evento_label }}
-                        </span>
+                        <span class="badge badge-tinta">v{{ version.version_num }}</span>
+                        <span class="badge badge-tinta">{{ version.evento_label }}</span>
                         {% if version.es_actual %}
-                        <span class="rounded-full bg-bosque px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white">
+                        <span class="badge badge-bosque">
+                            <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><circle cx="4" cy="4" r="3"/></svg>
                             Actual
                         </span>
                         {% endif %}
                     </div>
-                    <p class="mt-3 text-sm leading-6 text-black/75">{{ version.resumen_cambios }}</p>
-                    <div class="mt-3 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.12em] text-black/45">
-                        <span>Fecha: {{ version.created_at | fecha_hora }}</span>
-                        <span>Usuario: {{ version.created_by or "Sistema" }}</span>
-                    </div>
+                    <p class="mt-2.5 text-sm leading-relaxed text-black/70">{{ version.resumen_cambios }}</p>
+                    <p class="mt-2 text-xs text-black/40">{{ version.created_at | fecha_hora }} · {{ version.created_by or "Sistema" }}</p>
                 </div>
                 {% if not version.es_actual %}
                 <button
-                    class="restaurar-version-btn rounded-full border border-black/10 px-4 py-2 text-sm font-semibold transition hover:border-bosque hover:text-bosque"
+                    class="restaurar-version-btn btn btn-secondary shrink-0 text-xs"
                     data-version-id="{{ version.id }}"
                     data-version-num="{{ version.version_num }}"
                 >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 4l2-2 2 2M3 2v6a2 2 0 0 0 4 0V5"/>
+                    </svg>
                     Restaurar
                 </button>
                 {% endif %}
@@ -88,62 +126,70 @@
 </section>
 {% endif %}
 
-<section class="grid gap-6 {% if presupuesto.escenarios|length == 2 %}xl:grid-cols-2{% endif %}">
+<!-- Escenarios ───────────────────────────────────────────────────────────── -->
+<div class="grid gap-6 {% if presupuesto.escenarios|length == 2 %}xl:grid-cols-2{% endif %}">
     {% for escenario in presupuesto.escenarios %}
-    <article class="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
+    <article class="rounded-[2rem] border border-black/[0.07] bg-white p-6 shadow-sm">
+
+        <!-- Escenario header -->
         <div class="mb-5 flex items-start justify-between gap-4">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-ladrillo">Escenario {{ loop.index }}</p>
-                <h2 class="mt-2 text-3xl font-black">{{ escenario.nombre }}</h2>
+                <p class="section-eyebrow text-ladrillo mb-1">Escenario {{ loop.index }}</p>
+                <h2 class="text-2xl font-black text-tinta">{{ escenario.nombre }}</h2>
             </div>
-            <div class="rounded-[1.2rem] bg-hoja px-4 py-3 text-right">
-                <p class="text-xs uppercase tracking-[0.18em] text-black/45">Copias</p>
-                <p class="text-2xl font-black">{{ escenario.cantidad_copias }}</p>
-            </div>
-        </div>
-
-        <div class="mb-5 grid gap-3 rounded-[1.5rem] bg-tinta p-4 text-white sm:grid-cols-2">
-            <div>
-                <p class="text-xs uppercase tracking-[0.2em] text-white/55">Subtotal</p>
-                <p class="mt-1 text-xl font-black">{{ escenario.subtotal | ars }}</p>
-            </div>
-            <div>
-                <p class="text-xs uppercase tracking-[0.2em] text-white/55">Total</p>
-                <p class="mt-1 text-xl font-black">{{ escenario.total | ars }}</p>
-            </div>
-            <div>
-                <p class="text-xs uppercase tracking-[0.2em] text-white/55">Precio por ejemplar</p>
-                <p class="mt-1 text-lg font-bold">{{ escenario.precio_por_ejemplar | ars }}</p>
-            </div>
-            <div>
-                <p class="text-xs uppercase tracking-[0.2em] text-white/55">Precio USD</p>
-                <p class="mt-1 text-lg font-bold">{{ escenario.precio_usd | usd }}</p>
-            </div>
-            <div>
-                <p class="text-xs uppercase tracking-[0.2em] text-white/55">% ganancia</p>
-                <p class="mt-1 text-lg font-bold">{{ escenario.porcentaje_ganancia | porcentaje }}</p>
-            </div>
-            <div>
-                <p class="text-xs uppercase tracking-[0.2em] text-white/55">Ganancia neta</p>
-                <p class="mt-1 text-lg font-bold">{{ escenario.ganancia_neta_pesos | ars }}</p>
+            <div class="rounded-2xl border border-black/[0.07] bg-hoja px-4 py-3 text-right">
+                <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/40">Copias</p>
+                <p class="mt-0.5 text-2xl font-black tabular-nums">{{ escenario.cantidad_copias }}</p>
             </div>
         </div>
 
-        <div class="overflow-hidden rounded-[1.5rem] border border-black/10">
-            <table class="min-w-full text-left text-sm">
-                <thead class="bg-hoja">
-                    <tr class="text-black/55">
-                        <th class="px-4 py-3 font-semibold">Concepto</th>
-                        <th class="px-4 py-3 font-semibold">Monto ARS</th>
-                        <th class="px-4 py-3 font-semibold">Nota</th>
+        <!-- Financial summary -->
+        <div class="mb-5 grid gap-0 overflow-hidden rounded-2xl bg-tinta text-white sm:grid-cols-2">
+            <div class="border-b border-white/[0.07] px-5 py-4 sm:border-b-0 sm:border-r">
+                <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Subtotal</p>
+                <p class="mt-1 text-2xl font-black tabular-nums">{{ escenario.subtotal | ars }}</p>
+            </div>
+            <div class="border-b border-white/[0.07] px-5 py-4">
+                <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Total</p>
+                <p class="mt-1 text-2xl font-black tabular-nums">{{ escenario.total | ars }}</p>
+            </div>
+            <div class="border-b border-white/[0.07] px-5 py-4 sm:border-b-0 sm:border-r">
+                <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Por ejemplar</p>
+                <p class="mt-1 text-lg font-bold tabular-nums">{{ escenario.precio_por_ejemplar | ars }}</p>
+            </div>
+            <div class="border-b border-white/[0.07] px-5 py-4">
+                <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Precio USD</p>
+                <p class="mt-1 text-lg font-bold tabular-nums">{{ escenario.precio_usd | usd }}</p>
+            </div>
+            <div class="border-b border-white/[0.07] px-5 py-4 sm:col-span-2 sm:border-b-0 sm:border-t sm:border-white/[0.07]">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Ganancia neta</p>
+                        <p class="mt-1 text-lg font-bold tabular-nums">{{ escenario.ganancia_neta_pesos | ars }}</p>
+                    </div>
+                    <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-bold tabular-nums">
+                        {{ escenario.porcentaje_ganancia | porcentaje }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Items table -->
+        <div class="overflow-hidden rounded-2xl border border-black/[0.07]">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Concepto</th>
+                        <th>Monto ARS</th>
+                        <th>Nota</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in escenario["items"] %}
-                    <tr class="border-t border-black/5 align-top">
-                        <td class="px-4 py-3 font-semibold">{{ item.nombre }}</td>
-                        <td class="px-4 py-3">{{ item.monto | ars }}</td>
-                        <td class="px-4 py-3 text-black/60">{{ item.nota or "-" }}</td>
+                    <tr>
+                        <td class="font-semibold">{{ item.nombre }}</td>
+                        <td class="tabular-nums">{{ item.monto | ars }}</td>
+                        <td class="text-black/50">{{ item.nota or "—" }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -151,7 +197,8 @@
         </div>
     </article>
     {% endfor %}
-</section>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -162,9 +209,7 @@
         try {
             const response = await fetch(`/presupuestos/${presupuestoId}/duplicar`, { method: "POST" });
             const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.detail || "No se pudo duplicar el presupuesto.");
-            }
+            if (!response.ok) throw new Error(data.detail || "No se pudo duplicar el presupuesto.");
             window.location.href = data.redirect_url;
         } catch (error) {
             mostrarToast(error.message || "Error al duplicar.", "error");
@@ -172,16 +217,11 @@
     });
 
     document.getElementById("eliminar-btn").addEventListener("click", async () => {
-        const confirmar = window.confirm("Se va a eliminar el presupuesto de forma permanente. Queres continuar?");
-        if (!confirmar) {
-            return;
-        }
+        if (!window.confirm("Se va a eliminar el presupuesto de forma permanente. ¿Continuar?")) return;
         try {
             const response = await fetch(`/presupuestos/${presupuestoId}`, { method: "DELETE" });
             const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.detail || "No se pudo eliminar el presupuesto.");
-            }
+            if (!response.ok) throw new Error(data.detail || "No se pudo eliminar el presupuesto.");
             window.location.href = data.redirect_url;
         } catch (error) {
             mostrarToast(error.message || "Error al eliminar.", "error");
@@ -192,19 +232,11 @@
         button.addEventListener("click", async () => {
             const versionId = button.dataset.versionId;
             const versionNum = button.dataset.versionNum;
-            const confirmar = window.confirm(`Se va a restaurar la version ${versionNum}. Queres continuar?`);
-            if (!confirmar) {
-                return;
-            }
-
+            if (!window.confirm(`Se va a restaurar la version ${versionNum}. ¿Continuar?`)) return;
             try {
-                const response = await fetch(`/presupuestos/${presupuestoId}/versiones/${versionId}/restaurar`, {
-                    method: "POST"
-                });
+                const response = await fetch(`/presupuestos/${presupuestoId}/versiones/${versionId}/restaurar`, { method: "POST" });
                 const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.detail || "No se pudo restaurar la version.");
-                }
+                if (!response.ok) throw new Error(data.detail || "No se pudo restaurar la version.");
                 window.location.href = data.redirect_url;
             } catch (error) {
                 mostrarToast(error.message || "Error al restaurar.", "error");

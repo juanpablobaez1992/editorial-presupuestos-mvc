@@ -3,112 +3,186 @@
 {% block title %}Dashboard | Presupuestos{% endblock %}
 
 {% block content %}
-<section class="mb-8 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-    <div class="rounded-[2rem] border border-black/10 bg-white p-8 shadow-sm">
-        <p class="mb-2 text-sm font-semibold uppercase tracking-[0.25em] text-ladrillo">Panel central</p>
-        <h1 class="max-w-3xl text-4xl font-black leading-tight">Presupuestos listos para cotizar, comparar, auditar y exportar en un mismo flujo.</h1>
-        <p class="mt-4 max-w-2xl text-base text-black/65">
-            Ahora el tablero tambien resume actividad del mes, ticket promedio, cliente mas recurrente y mix de escenarios para leer el negocio sin salir del dashboard.
+
+<!-- Hero + KPIs ─────────────────────────────────────────────────────────── -->
+<div class="mb-7 grid gap-5 lg:grid-cols-[1fr_auto]">
+    <div>
+        <p class="section-eyebrow text-ladrillo mb-2">Panel central</p>
+        <h1 class="text-3xl font-extrabold leading-tight tracking-tight text-tinta sm:text-4xl">
+            Presupuestos editoriales
+        </h1>
+        <p class="mt-2 max-w-xl text-sm leading-relaxed text-black/55">
+            Cotiza, compara escenarios, auditá el historial y exportá a XLSX o PDF sin salir del flujo.
         </p>
     </div>
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-        <article class="rounded-[2rem] border border-black/10 bg-bosque p-6 text-white shadow-sm">
-            <p class="text-sm uppercase tracking-[0.22em] text-white/70">Total registrados</p>
-            <p class="mt-3 text-4xl font-black">{{ metricas.total_presupuestos }}</p>
-        </article>
-        <article class="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
-            <p class="text-sm uppercase tracking-[0.22em] text-black/45">Ticket promedio</p>
-            <p class="mt-3 text-2xl font-black">{{ metricas.ticket_promedio_ars | ars }}</p>
-        </article>
+    <div class="flex items-start">
+        <a href="/presupuestos/nuevo" class="btn btn-primary text-sm">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <path d="M7 1v12M1 7h12"/>
+            </svg>
+            Nuevo presupuesto
+        </a>
     </div>
-</section>
+</div>
 
-<section class="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-    <article class="rounded-[1.7rem] border border-black/10 bg-white p-5 shadow-sm">
-        <p class="text-xs uppercase tracking-[0.2em] text-black/45">Mes actual</p>
-        <p class="mt-2 text-3xl font-black">{{ metricas.presupuestos_mes_actual }}</p>
-        <p class="mt-2 text-sm text-black/60">Presupuestos creados este mes.</p>
-    </article>
-    <article class="rounded-[1.7rem] border border-black/10 bg-white p-5 shadow-sm">
-        <p class="text-xs uppercase tracking-[0.2em] text-black/45">Cliente top</p>
-        <p class="mt-2 text-2xl font-black">{{ metricas.cliente_top_nombre }}</p>
-        <p class="mt-2 text-sm text-black/60">{{ metricas.cliente_top_cantidad }} presupuesto{% if metricas.cliente_top_cantidad != 1 %}s{% endif %} asociados.</p>
-    </article>
-    <article class="rounded-[1.7rem] border border-black/10 bg-white p-5 shadow-sm">
-        <p class="text-xs uppercase tracking-[0.2em] text-black/45">Escenarios dobles</p>
-        <p class="mt-2 text-3xl font-black">{{ metricas.porcentaje_dos_escenarios | porcentaje }}</p>
-        <p class="mt-2 text-sm text-black/60">Proporcion de presupuestos con comparacion de dos tiradas.</p>
-    </article>
-    <article class="rounded-[1.7rem] border border-black/10 bg-white p-5 shadow-sm">
-        <p class="text-xs uppercase tracking-[0.2em] text-black/45">Copias base</p>
-        <p class="mt-2 text-3xl font-black">{{ metricas.promedio_copias_base | numero }}</p>
-        <p class="mt-2 text-sm text-black/60">Promedio de copias en el escenario de referencia.</p>
-    </article>
-</section>
+<!-- Metric cards ─────────────────────────────────────────────────────────── -->
+<div class="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
-<section class="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
-    <div class="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <h2 class="text-2xl font-black">Presupuestos</h2>
-            <p class="text-sm text-black/60">Tabla general con accesos rapidos a detalle, edicion y exportaciones comercial e interna.</p>
+    <article class="card flex items-center gap-4 rounded-[1.5rem] border bg-bosque p-5 text-white shadow-none">
+        <div class="metric-icon bg-white/15">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 15V9M7 15V5M11 15V8M15 15V3"/>
+            </svg>
         </div>
-        <form method="get" action="/" class="flex gap-3">
-            <input
-                type="text"
-                name="q"
-                value="{{ busqueda }}"
-                placeholder="Buscar por proyecto o cliente"
-                class="w-80 rounded-full border border-black/10 bg-hoja px-4 py-3 outline-none transition focus:border-bosque"
-            >
-            <button class="rounded-full bg-tinta px-5 py-3 font-semibold text-white transition hover:bg-bosque">Buscar</button>
+        <div class="min-w-0">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Total registrados</p>
+            <p class="mt-0.5 text-3xl font-black tabular-nums">{{ metricas.total_presupuestos }}</p>
+        </div>
+    </article>
+
+    <article class="card flex items-center gap-4 rounded-[1.5rem] border border-black/[0.07] bg-white p-5">
+        <div class="metric-icon bg-mostaza/15">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#9a6e1a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="9" r="7.5"/>
+                <path d="M9 5.5v3.5l2 2"/>
+            </svg>
+        </div>
+        <div class="min-w-0">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/40">Mes actual</p>
+            <p class="mt-0.5 text-3xl font-black tabular-nums">{{ metricas.presupuestos_mes_actual }}</p>
+            <p class="mt-0.5 text-xs text-black/45">presupuestos</p>
+        </div>
+    </article>
+
+    <article class="card flex items-center gap-4 rounded-[1.5rem] border border-black/[0.07] bg-white p-5">
+        <div class="metric-icon bg-ladrillo/10">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#a65233" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="7" cy="6" r="3.5"/>
+                <path d="M1.5 15.5c0-3.31 2.46-6 5.5-6M13.5 15.5v-5M11 13l2.5 2.5 2.5-2.5"/>
+            </svg>
+        </div>
+        <div class="min-w-0 overflow-hidden">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/40">Cliente top</p>
+            <p class="mt-0.5 truncate text-xl font-black">{{ metricas.cliente_top_nombre }}</p>
+            <p class="mt-0.5 text-xs text-black/45">{{ metricas.cliente_top_cantidad }} presupuesto{% if metricas.cliente_top_cantidad != 1 %}s{% endif %}</p>
+        </div>
+    </article>
+
+    <article class="card flex items-center gap-4 rounded-[1.5rem] border border-black/[0.07] bg-white p-5">
+        <div class="metric-icon bg-bosque/10">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#365949" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1.5" y="1.5" width="7" height="7" rx="1.5"/>
+                <rect x="9.5" y="1.5" width="7" height="7" rx="1.5"/>
+                <rect x="1.5" y="9.5" width="7" height="7" rx="1.5"/>
+                <rect x="9.5" y="9.5" width="7" height="7" rx="1.5"/>
+            </svg>
+        </div>
+        <div class="min-w-0">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/40">Ticket promedio</p>
+            <p class="mt-0.5 text-xl font-black">{{ metricas.ticket_promedio_ars | ars }}</p>
+            <p class="mt-0.5 text-xs text-black/45">{{ metricas.porcentaje_dos_escenarios | porcentaje }} dobles</p>
+        </div>
+    </article>
+
+</div>
+
+<!-- Budget table ─────────────────────────────────────────────────────────── -->
+<section class="rounded-[2rem] border border-black/[0.07] bg-white shadow-sm">
+
+    <!-- Table header -->
+    <div class="flex flex-col gap-4 border-b border-black/[0.06] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h2 class="text-lg font-bold text-tinta">Presupuestos</h2>
+            <p class="text-xs text-black/45">Accesos rapidos a detalle, edicion, XLSX y PDF.</p>
+        </div>
+        <form method="get" action="/" class="flex gap-2">
+            <div class="relative">
+                <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black/30" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="6" cy="6" r="4.5"/>
+                    <path d="M9.5 9.5l3 3"/>
+                </svg>
+                <input
+                    type="text"
+                    name="q"
+                    value="{{ busqueda }}"
+                    placeholder="Buscar proyecto o cliente..."
+                    class="w-64 rounded-full border border-black/10 bg-hoja py-2 pl-9 pr-4 text-sm outline-none transition focus:border-bosque focus:bg-white focus:shadow-[0_0_0_3px_rgba(54,89,73,0.12)]"
+                >
+            </div>
+            <button class="btn btn-secondary text-sm py-2">Buscar</button>
         </form>
     </div>
 
     {% if presupuestos %}
     <div class="overflow-x-auto">
-        <table class="min-w-full text-left text-sm">
+        <table class="data-table">
             <thead>
-                <tr class="border-b border-black/10 text-black/55">
-                    <th class="px-4 py-3 font-semibold">Proyecto</th>
-                    <th class="px-4 py-3 font-semibold">Cliente</th>
-                    <th class="px-4 py-3 font-semibold">Fecha</th>
-                    <th class="px-4 py-3 font-semibold">Total ARS</th>
-                    <th class="px-4 py-3 font-semibold">Total USD</th>
-                    <th class="px-4 py-3 font-semibold">Acciones</th>
+                <tr>
+                    <th>Proyecto</th>
+                    <th>Cliente</th>
+                    <th>Fecha</th>
+                    <th>Total ARS</th>
+                    <th>Total USD</th>
+                    <th class="text-right">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for presupuesto in presupuestos %}
-                <tr class="border-b border-black/5 align-top hover:bg-black/[0.02]">
-                    <td class="px-4 py-4">
-                        <p class="font-bold">{{ presupuesto.nombre_proyecto }}</p>
-                        <div class="mt-1 flex flex-wrap gap-2 text-xs text-black/50">
-                            <span>{{ presupuesto.cantidad_escenarios }} escenario{% if presupuesto.cantidad_escenarios != 1 %}s{% endif %}</span>
+                <tr>
+                    <td class="max-w-[220px]">
+                        <p class="font-semibold text-tinta leading-snug">{{ presupuesto.nombre_proyecto }}</p>
+                        <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            <span class="badge badge-tinta">
+                                {{ presupuesto.cantidad_escenarios }} escenario{% if presupuesto.cantidad_escenarios != 1 %}s{% endif %}
+                            </span>
                             {% if presupuesto.tipo_proyecto_clave %}
-                            <span class="rounded-full bg-hoja px-2 py-1 font-semibold text-black/65">{{ presupuesto.tipo_proyecto_clave | replace("_", " ") | title }}</span>
+                            <span class="badge badge-bosque">{{ presupuesto.tipo_proyecto_clave | replace("_", " ") | title }}</span>
                             {% endif %}
                         </div>
                     </td>
-                    <td class="px-4 py-4">{{ presupuesto.cliente }}</td>
-                    <td class="px-4 py-4">{{ presupuesto.fecha }}</td>
-                    <td class="px-4 py-4">
-                        <p class="font-semibold">{{ presupuesto.total_ars_referencia | ars }}</p>
-                        <p class="mt-1 text-xs text-black/50">
-                            Base: {{ presupuesto.escenario_referencia_nombre }}{% if presupuesto.cantidad_escenarios > 1 %} · Rango: {{ presupuesto.total_ars_min | ars }} a {{ presupuesto.total_ars_max | ars }}{% endif %}
-                        </p>
-                    </td>
-                    <td class="px-4 py-4">
-                        <p class="font-semibold">{{ presupuesto.total_usd_referencia | usd }}</p>
+                    <td class="font-medium text-tinta/80">{{ presupuesto.cliente }}</td>
+                    <td class="text-sm text-black/55 whitespace-nowrap">{{ presupuesto.fecha }}</td>
+                    <td>
+                        <p class="font-semibold tabular-nums">{{ presupuesto.total_ars_referencia | ars }}</p>
                         {% if presupuesto.cantidad_escenarios > 1 %}
-                        <p class="mt-1 text-xs text-black/50">{{ presupuesto.total_usd_min | usd }} a {{ presupuesto.total_usd_max | usd }}</p>
+                        <p class="mt-0.5 text-xs text-black/40 tabular-nums">{{ presupuesto.total_ars_min | ars }} – {{ presupuesto.total_ars_max | ars }}</p>
+                        {% endif %}
+                        <p class="mt-0.5 text-xs text-black/35">Base: {{ presupuesto.escenario_referencia_nombre }}</p>
+                    </td>
+                    <td>
+                        <p class="font-semibold tabular-nums">{{ presupuesto.total_usd_referencia | usd }}</p>
+                        {% if presupuesto.cantidad_escenarios > 1 %}
+                        <p class="mt-0.5 text-xs text-black/40 tabular-nums">{{ presupuesto.total_usd_min | usd }} – {{ presupuesto.total_usd_max | usd }}</p>
                         {% endif %}
                     </td>
-                    <td class="px-4 py-4">
-                        <div class="flex flex-wrap gap-2">
-                            <a href="/presupuestos/{{ presupuesto.id }}" class="rounded-full border border-black/10 px-3 py-2 font-semibold transition hover:border-bosque hover:text-bosque">Ver</a>
-                            <a href="/presupuestos/{{ presupuesto.id }}/editar" class="rounded-full border border-black/10 px-3 py-2 font-semibold transition hover:border-ladrillo hover:text-ladrillo">Editar</a>
-                            <a href="/presupuestos/{{ presupuesto.id }}/export" class="rounded-full border border-black/10 px-3 py-2 font-semibold transition hover:border-mostaza hover:text-ladrillo">XLSX</a>
-                            <a href="/presupuestos/{{ presupuesto.id }}/export/pdf" class="rounded-full border border-black/10 px-3 py-2 font-semibold transition hover:border-bosque hover:text-bosque">PDF</a>
+                    <td>
+                        <div class="flex flex-wrap items-center justify-end gap-1.5">
+                            <a href="/presupuestos/{{ presupuesto.id }}"
+                               class="btn btn-secondary py-1.5 text-xs">
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 6s1.8-4 5-4 5 4 5 4-1.8 4-5 4-5-4-5-4z"/>
+                                    <circle cx="6" cy="6" r="1.5"/>
+                                </svg>
+                                Ver
+                            </a>
+                            <a href="/presupuestos/{{ presupuesto.id }}/editar"
+                               class="btn btn-secondary py-1.5 text-xs hover:border-ladrillo hover:text-ladrillo">
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M8.5 1.5a1.41 1.41 0 0 1 2 2L3.5 10.5l-3 .5.5-3 7.5-6.5z"/>
+                                </svg>
+                                Editar
+                            </a>
+                            <a href="/presupuestos/{{ presupuesto.id }}/export"
+                               class="btn btn-secondary py-1.5 text-xs hover:border-mostaza hover:text-[#9a6e1a]">
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M10 7v3a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7M6 1v6M4 5l2 2 2-2"/>
+                                </svg>
+                                XLSX
+                            </a>
+                            <a href="/presupuestos/{{ presupuesto.id }}/export/pdf"
+                               class="btn btn-secondary py-1.5 text-xs">
+                                PDF
+                            </a>
                         </div>
                     </td>
                 </tr>
@@ -116,12 +190,29 @@
             </tbody>
         </table>
     </div>
+
     {% else %}
-    <div class="rounded-[1.5rem] border border-dashed border-black/15 bg-hoja p-10 text-center">
-        <h3 class="text-2xl font-black">Todavia no hay presupuestos cargados</h3>
-        <p class="mt-2 text-black/60">Empeza creando el primero y desde ahi ya podes duplicar, editar, exportar y seguir su historial.</p>
-        <a href="/presupuestos/nuevo" class="mt-5 inline-flex rounded-full bg-bosque px-5 py-3 font-semibold text-white">Crear presupuesto</a>
+    <!-- Empty state -->
+    <div class="flex flex-col items-center gap-5 px-6 py-16 text-center">
+        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-hoja">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#365949" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="4" width="20" height="20" rx="3"/>
+                <path d="M9 10h10M9 14h7M9 18h5"/>
+            </svg>
+        </div>
+        <div>
+            <h3 class="text-xl font-black text-tinta">Todavia no hay presupuestos</h3>
+            <p class="mt-1.5 max-w-sm text-sm text-black/50">Empezá creando el primero. Desde ahí podés duplicar, editar, exportar y seguir el historial.</p>
+        </div>
+        <a href="/presupuestos/nuevo" class="btn btn-primary">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <path d="M6.5 1v11M1 6.5h11"/>
+            </svg>
+            Crear primer presupuesto
+        </a>
     </div>
     {% endif %}
+
 </section>
+
 {% endblock %}
