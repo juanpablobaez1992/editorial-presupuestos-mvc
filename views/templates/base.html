@@ -29,13 +29,21 @@
     <header class="relative border-b border-black/5 bg-white/80 backdrop-blur">
         <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
             <div>
-                <a href="/" class="text-2xl font-black tracking-tight">Firmamento / Orbita Studio</a>
+                <a href="{% if auth_user %}/{% else %}/login{% endif %}" class="text-2xl font-black tracking-tight">Firmamento / Orbita Studio</a>
                 <p class="text-sm text-black/60">Sistema interno de presupuestos editoriales</p>
             </div>
             <nav class="flex items-center gap-3 text-sm font-semibold">
+                {% if auth_user %}
                 <a href="/" class="rounded-full border border-black/10 px-4 py-2 transition hover:border-bosque hover:text-bosque">Dashboard</a>
                 <a href="/presupuestos/nuevo" class="rounded-full bg-bosque px-4 py-2 text-white transition hover:bg-[#25473a]">Nuevo presupuesto</a>
                 <a href="/config" class="rounded-full border border-black/10 px-4 py-2 transition hover:border-ladrillo hover:text-ladrillo">Configuracion</a>
+                <span class="rounded-full border border-black/10 px-4 py-2 text-black/65">{{ auth_user }}</span>
+                <form method="post" action="/logout">
+                    <button class="rounded-full border border-black/10 px-4 py-2 transition hover:border-red-400 hover:text-red-700">Salir</button>
+                </form>
+                {% else %}
+                <a href="/login" class="rounded-full bg-bosque px-4 py-2 text-white transition hover:bg-[#25473a]">Ingresar</a>
+                {% endif %}
             </nav>
         </div>
     </header>

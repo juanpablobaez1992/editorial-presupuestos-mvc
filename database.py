@@ -62,11 +62,19 @@ def init_database() -> None:
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
 
+            CREATE TABLE IF NOT EXISTS auth_intentos (
+                id TEXT PRIMARY KEY,
+                username TEXT NOT NULL,
+                ip_address TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
             CREATE INDEX IF NOT EXISTS idx_presupuestos_fecha ON presupuestos (fecha DESC);
             CREATE INDEX IF NOT EXISTS idx_presupuestos_nombre ON presupuestos (nombre_proyecto);
             CREATE INDEX IF NOT EXISTS idx_presupuestos_cliente ON presupuestos (cliente);
             CREATE INDEX IF NOT EXISTS idx_escenarios_presupuesto ON escenarios (presupuesto_id, orden);
             CREATE INDEX IF NOT EXISTS idx_items_escenario ON items (escenario_id, orden);
+            CREATE INDEX IF NOT EXISTS idx_auth_intentos_usuario_ip ON auth_intentos (username, ip_address, created_at DESC);
             """
         )
 

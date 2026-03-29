@@ -43,7 +43,8 @@ La aplicacion esta pensada para uso interno y prioriza:
 | Configuracion | Administra tipo de cambio, tarifas por pagina y presets inteligentes |
 | Presets | Inserta o actualiza ISBN, banner y diseno de tapas con un clic |
 | Exportacion | Genera `.xlsx` por escenario y comparacion lado a lado |
-| Operacion | Tiene endpoint `/health` y tests automatizados con `pytest` |
+| Seguridad | Login fuerte con hash Argon2, sesion segura y bloqueo por intentos fallidos |
+| Operacion | Tiene endpoint `/health`, tests automatizados con `pytest` y stack Docker para VPS |
 
 ---
 
@@ -159,6 +160,31 @@ http://127.0.0.1:8000
 
 ---
 
+## Despliegue En VPS
+
+El proyecto ya incluye:
+
+- `Dockerfile`
+- `docker-compose.yml`
+- `Caddyfile`
+- `.env.example`
+- `docs/DEPLOY_VPS.md`
+
+Esto deja lista una publicacion sobre VPS con:
+
+- `https://presupuesto.ediccc.com`
+- TLS automatico con Caddy
+- persistencia de SQLite
+- login administrativo endurecido
+
+Para el paso a paso completo:
+
+```text
+docs/DEPLOY_VPS.md
+```
+
+---
+
 ## Endpoints Principales
 
 | Metodo | Ruta | Funcion |
@@ -203,6 +229,7 @@ La cobertura actual valida:
 - Los nombres de escenarios deben ser unicos por presupuesto.
 - El dashboard toma como referencia el escenario con menor cantidad de copias.
 - Si hay dos escenarios, muestra rango ARS y USD para lectura rapida.
+- El acceso queda protegido por login con hash fuerte y bloqueo temporal por abuso.
 
 ---
 
