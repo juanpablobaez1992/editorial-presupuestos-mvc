@@ -14,51 +14,104 @@
     </p>
 </section>
 
-<form id="config-form" class="max-w-5xl rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
-    <div class="grid gap-4 md:grid-cols-3">
-        <label class="field">
-            <span>Tipo de cambio</span>
-            <input type="number" min="0.01" step="0.01" name="tipo_de_cambio" value="{{ configuracion.tipo_de_cambio }}" required>
-        </label>
-        <label class="field">
-            <span>Tarifa edicion por pagina</span>
-            <input type="number" min="0" step="0.01" name="tarifa_edicion_por_pagina" value="{{ configuracion.tarifa_edicion_por_pagina }}" required>
-        </label>
-        <label class="field">
-            <span>Tarifa escaneo por pagina</span>
-            <input type="number" min="0" step="0.01" name="tarifa_escaneo_por_pagina" value="{{ configuracion.tarifa_escaneo_por_pagina }}" required>
-        </label>
-    </div>
+<div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+    <form id="config-form" class="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
+        <div class="grid gap-4 md:grid-cols-3">
+            <label class="field">
+                <span>Tipo de cambio</span>
+                <input type="number" min="0.01" step="0.01" name="tipo_de_cambio" value="{{ configuracion.tipo_de_cambio }}" required>
+            </label>
+            <label class="field">
+                <span>Tarifa edicion por pagina</span>
+                <input type="number" min="0" step="0.01" name="tarifa_edicion_por_pagina" value="{{ configuracion.tarifa_edicion_por_pagina }}" required>
+            </label>
+            <label class="field">
+                <span>Tarifa escaneo por pagina</span>
+                <input type="number" min="0" step="0.01" name="tarifa_escaneo_por_pagina" value="{{ configuracion.tarifa_escaneo_por_pagina }}" required>
+            </label>
+        </div>
 
-    <div class="mt-8">
-        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-black/45">Presets inteligentes</p>
-        <h2 class="mt-2 text-2xl font-black">Costos rapidos para items frecuentes</h2>
-        <p class="mt-2 text-sm text-black/60">
-            Estos montos se usan en el formulario para insertar o actualizar ISBN, banner y diseño de tapas con un clic.
+        <div class="mt-8">
+            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-black/45">Presets inteligentes</p>
+            <h2 class="mt-2 text-2xl font-black">Costos rapidos para items frecuentes</h2>
+            <p class="mt-2 text-sm text-black/60">
+                Estos montos se usan en el formulario para insertar o actualizar ISBN, banner y diseno de tapas con un clic.
+            </p>
+        </div>
+
+        <div class="mt-4 grid gap-4 md:grid-cols-3">
+            <label class="field">
+                <span>Preset ISBN</span>
+                <input type="number" min="0" step="0.01" name="preset_isbn" value="{{ configuracion.preset_isbn }}" required>
+            </label>
+            <label class="field">
+                <span>Preset banner</span>
+                <input type="number" min="0" step="0.01" name="preset_banner" value="{{ configuracion.preset_banner }}" required>
+            </label>
+            <label class="field">
+                <span>Preset diseno tapas</span>
+                <input type="number" min="0" step="0.01" name="preset_diseno_tapas" value="{{ configuracion.preset_diseno_tapas }}" required>
+            </label>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+            <button type="submit" class="rounded-full bg-bosque px-6 py-3 font-semibold text-white transition hover:bg-[#244839]">
+                Guardar configuracion
+            </button>
+        </div>
+    </form>
+
+    <section class="rounded-[2rem] border border-black/10 bg-bosque p-6 text-white shadow-sm">
+        <p class="text-sm font-semibold uppercase tracking-[0.22em] text-white/60">Acceso admin</p>
+        <h2 class="mt-2 text-2xl font-black">Cambiar credenciales</h2>
+        <p class="mt-3 text-sm leading-6 text-white/72">
+            Una vez guardadas, la app toma el usuario y la contrasena desde la base de datos. No hace falta volver a tocar el `.env`.
         </p>
-    </div>
 
-    <div class="mt-4 grid gap-4 md:grid-cols-3">
-        <label class="field">
-            <span>Preset ISBN</span>
-            <input type="number" min="0" step="0.01" name="preset_isbn" value="{{ configuracion.preset_isbn }}" required>
-        </label>
-        <label class="field">
-            <span>Preset banner</span>
-            <input type="number" min="0" step="0.01" name="preset_banner" value="{{ configuracion.preset_banner }}" required>
-        </label>
-        <label class="field">
-            <span>Preset diseño tapas</span>
-            <input type="number" min="0" step="0.01" name="preset_diseno_tapas" value="{{ configuracion.preset_diseno_tapas }}" required>
-        </label>
-    </div>
+        <div class="mt-5 rounded-[1.4rem] border border-white/10 bg-white/10 p-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Estado actual</p>
+            <div class="mt-3 grid gap-3 text-sm">
+                <div>
+                    <span class="block text-white/55">Usuario activo</span>
+                    <strong id="credenciales-username" class="mt-1 block text-lg text-white">{{ credenciales.username }}</strong>
+                </div>
+                <div>
+                    <span class="block text-white/55">Origen</span>
+                    <strong id="credenciales-origen" class="mt-1 inline-flex rounded-full border border-white/15 px-3 py-1 text-white">
+                        {% if credenciales.origen == "base_de_datos" %}Base de datos{% else %}Entorno{% endif %}
+                    </strong>
+                </div>
+            </div>
+        </div>
 
-    <div class="mt-6 flex justify-end">
-        <button type="submit" class="rounded-full bg-bosque px-6 py-3 font-semibold text-white transition hover:bg-[#244839]">
-            Guardar configuracion
-        </button>
-    </div>
-</form>
+        <form id="credenciales-form" class="mt-5 space-y-4">
+            <label class="field field-oscuro">
+                <span>Contrasena actual</span>
+                <input type="password" name="current_password" autocomplete="current-password" required>
+            </label>
+            <label class="field field-oscuro">
+                <span>Nuevo usuario</span>
+                <input type="text" name="nuevo_username" value="{{ credenciales.username }}" autocomplete="username" required>
+            </label>
+            <label class="field field-oscuro">
+                <span>Nueva contrasena</span>
+                <input type="password" name="nueva_password" minlength="12" autocomplete="new-password" required>
+            </label>
+            <label class="field field-oscuro">
+                <span>Confirmar contrasena</span>
+                <input type="password" name="confirmar_password" minlength="12" autocomplete="new-password" required>
+            </label>
+
+            <div class="rounded-[1.2rem] border border-white/10 bg-black/10 px-4 py-3 text-sm text-white/72">
+                La nueva contrasena debe tener al menos 12 caracteres, mayusculas, minusculas, numeros y un simbolo.
+            </div>
+
+            <button type="submit" class="w-full rounded-full bg-white px-5 py-3 font-semibold text-bosque transition hover:bg-[#f4efe7]">
+                Guardar credenciales
+            </button>
+        </form>
+    </section>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -86,6 +139,41 @@
                 throw new Error(extraerMensajeError(data, "No se pudo guardar la configuracion."));
             }
             mostrarToast("Configuracion actualizada.");
+        } catch (error) {
+            mostrarToast(error.message || "Ocurrio un error.", "error");
+        }
+    });
+
+    document.getElementById("credenciales-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const payload = {
+            current_password: form.current_password.value,
+            nuevo_username: form.nuevo_username.value,
+            nueva_password: form.nueva_password.value,
+            confirmar_password: form.confirmar_password.value
+        };
+
+        try {
+            const response = await fetch("/config/credenciales", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(extraerMensajeError(data, "No se pudieron guardar las credenciales."));
+            }
+
+            document.getElementById("credenciales-username").textContent = data.credenciales.username;
+            document.getElementById("credenciales-origen").textContent = data.credenciales.origen === "base_de_datos"
+                ? "Base de datos"
+                : "Entorno";
+            form.current_password.value = "";
+            form.nueva_password.value = "";
+            form.confirmar_password.value = "";
+            form.nuevo_username.value = data.credenciales.username;
+            mostrarToast("Credenciales actualizadas.");
         } catch (error) {
             mostrarToast(error.message || "Ocurrio un error.", "error");
         }

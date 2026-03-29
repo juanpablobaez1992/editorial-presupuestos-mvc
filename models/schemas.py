@@ -150,6 +150,35 @@ class ConfiguracionResponse(ConfiguracionBase):
     pass
 
 
+class CredencialesAdminUpdate(BaseModel):
+    current_password: str = Field(..., min_length=1, max_length=200)
+    nuevo_username: str = Field(..., min_length=3, max_length=80)
+    nueva_password: str = Field(..., min_length=12, max_length=200)
+    confirmar_password: str = Field(..., min_length=12, max_length=200)
+
+    @field_validator("nuevo_username")
+    @classmethod
+    def validar_username(cls, value: str) -> str:
+        limpio = value.strip()
+        if " " in limpio:
+            raise ValueError("El usuario no puede contener espacios.")
+        return limpio
+
+    @model_validator(mode="after")
+    def validar_password(self) -> "CredencialesAdminUpdate":
+        if self.nueva_password != self.confirmar_password:
+            raise ValueError("La nueva contrasena y su confirmacion no coinciden.")
+        if not any(char.islower() for char in self.nueva_password):
+            raise ValueError("La nueva contrasena debe incluir minusculas.")
+        if not any(char.isupper() for char in self.nueva_password):
+            raise ValueError("La nueva contrasena debe incluir mayusculas.")
+        if not any(char.isdigit() for char in self.nueva_password):
+            raise ValueError("La nueva contrasena debe incluir numeros.")
+        if self.nueva_password.isalnum():
+            raise ValueError("La nueva contrasena debe incluir al menos un simbolo.")
+        return self
+
+
 class CalculoEscenarioRequest(EscenarioCreate):
     pass
 
