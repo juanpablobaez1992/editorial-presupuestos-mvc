@@ -44,10 +44,15 @@ Generar el hash:
 python scripts/generar_password_hash.py "TuPasswordMuyFuerte_Aqui"
 ```
 
-Pegar el resultado en:
+El script devuelve dos formatos:
+
+- hash normal
+- hash en base64 seguro para `.env`
+
+Usa el formato base64 y pegalo en:
 
 ```env
-AUTH_PASSWORD_HASH=...
+AUTH_PASSWORD_HASH_B64=...
 ```
 
 Tambien definir:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import os
 import secrets
 from dataclasses import dataclass
@@ -47,11 +48,15 @@ def get_settings() -> Settings:
     app_env = os.getenv("APP_ENV", "development")
     auth_dev_password = os.getenv("AUTH_DEV_PASSWORD", "Admin123!!")
     auth_password_hash = os.getenv("AUTH_PASSWORD_HASH", "").strip()
+    auth_password_hash_b64 = os.getenv("AUTH_PASSWORD_HASH_B64", "").strip()
+
+    if not auth_password_hash and auth_password_hash_b64:
+        auth_password_hash = base64.b64decode(auth_password_hash_b64.encode("utf-8")).decode("utf-8")
 
     if not auth_password_hash:
         if app_env.lower() == "production":
             raise RuntimeError(
-                "AUTH_PASSWORD_HASH es obligatorio en produccion. Genera uno fuerte antes de desplegar."
+                "AUTH_PASSWORD_HASH o AUTH_PASSWORD_HASH_B64 es obligatorio en produccion."
             )
         auth_password_hash = password_hasher.hash(auth_dev_password)
 
