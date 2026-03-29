@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}{{ presupuesto.nombre_proyecto }}{% endblock %}
+
+{% block content %}
+<section class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-ladrillo">Detalle</p>
+        <h1 class="mt-2 text-4xl font-black">{{ presupuesto.nombre_proyecto }}</h1>
+        <div class="mt-3 flex flex-wrap gap-3 text-sm text-black/60">
+            <span>Cliente: <strong class="text-tinta">{{ presupuesto.cliente }}</strong></span>
+            <span>Fecha: <strong class="text-tinta">{{ presupuesto.fecha }}</strong></span>
+            <span>{{ presupuesto.cantidad_escenarios }} escenario{% if presupuesto.cantidad_escenarios != 1 %}s{% endif %}</span>
+        </div>
+    </div>
+    <div class="flex flex-wrap gap-3">
+        <a href="/presupuestos/{{ presupuesto.id }}/editar" class="rounded-full border border-black/10 px-4 py-3 font-semibold transition hover:border-ladrillo hover:text-ladrillo">Editar</a>
+        <a href="/presupuestos/{{ presupuesto.id }}/export" class="rounded-full border border-black/10 px-4 py-3 font-semibold transition hover:border-mostaza hover:text-ladrillo">Exportar XLSX</a>
+        <button id="duplicar-btn" class="rounded-full border border-black/10 px-4 py-3 font-semibold transition hover:border-bosque hover:text-bosque">Duplicar</button>
+        <button id="eliminar-btn" class="rounded-full bg-[#8f332a] px-4 py-3 font-semibold text-white transition hover:bg-[#722920]">Eliminar</button>
+    </div>
+</section>
+
+{% if presupuesto.notas %}
+<section class="mb-6 rounded-[1.8rem] border border-black/10 bg-white p-5 shadow-sm">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-black/45">Notas</p>
+    <p class="mt-2 text-black/70">{{ presupuesto.notas }}</p>
+</section>
+{% endif %}
+
+<section class="grid gap-6 {% if presupuesto.escenarios|length == 2 %}xl:grid-cols-2{% endif %}">
+    {% for escenario in presupuesto.escenarios %}
+    <article class="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
+        <div class="mb-5 flex items-start justify-between gap-4">
+            <div>
+                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-ladrillo">Escenario {{ loop.index }}</p>
+                <h2 class="mt-2 text-3xl font-black">{{ escenario.nombre }}</h2>
+            </div>
+            <div class="rounded-[1.2rem] bg-hoja px-4 py-3 text-right">
+                <p class="text-xs uppercase tracking-[0.18em] text-black/45">Copias</p>
+                <p class="text-2xl font-black">{{ escenario.cantidad_copias }}</p>
+            </div>
+        </div>
+
+        <div class="mb-5 grid gap-3 rounded-[1.5rem] bg-tinta p-4 text-white sm:grid-cols-2">
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-white/55">Subtotal</p>
+                <p class="mt-1 text-xl font-black">{{ escenario.subtotal | ars }}</p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-white/55">Total</p>
+                <p class="mt-1 text-xl font-black">{{ escenario.total | ars }}</p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-white/55">Precio por ejemplar</p>
+                <p class="mt-1 text-lg font-bold">{{ escenario.precio_por_ejemplar | ars }}</p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-white/55">Precio USD</p>
+                <p class="mt-1 text-lg font-bold">{{ escenario.precio_usd | usd }}</p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-white/55">% ganancia</p>
+                <p class="mt-1 text-lg font-bold">{{ escenario.porcentaje_ganancia | porcentaje }}</p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-white/55">Ganancia neta</p>
+                <p class="mt-1 text-lg font-bold">{{ escenario.ganancia_neta_pesos | ars }}</p>
+            </div>
+        </div>
+
+        <div class="overflow-hidden rounded-[1.5rem] border border-black/10">
+            <table class="min-w-full text-left text-sm">
+                <thead class="bg-hoja">
+                    <tr class="text-black/55">
+                        <th class="px-4 py-3 font-semibold">Concepto</th>
+                        <th class="px-4 py-3 font-semibold">Monto ARS</th>
+                        <th class="px-4 py-3 font-semibold">Nota</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in escenario["items"] %}
+                    <tr class="border-t border-black/5 align-top">
+                        <td class="px-4 py-3 font-semibold">{{ item.nombre }}</td>
+                        <td class="px-4 py-3">{{ item.monto | ars }}</td>
+                        <td class="px-4 py-3 text-black/60">{{ item.nota or "-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+    {% endfor %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const presupuestoId = "{{ presupuesto.id }}";
+
+    document.getElementById("duplicar-btn").addEventListener("click", async () => {
+        try {
+            const response = await fetch(`/presupuestos/${presupuestoId}/duplicar`, { method: "POST" });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.detail || "No se pudo duplicar el presupuesto.");
+            }
+            window.location.href = data.redirect_url;
+        } catch (error) {
+            mostrarToast(error.message || "Error al duplicar.", "error");
+        }
+    });
+
+    document.getElementById("eliminar-btn").addEventListener("click", async () => {
+        const confirmar = window.confirm("Se va a eliminar el presupuesto de forma permanente. Queres continuar?");
+        if (!confirmar) {
+            return;
+        }
+        try {
+            const response = await fetch(`/presupuestos/${presupuestoId}`, { method: "DELETE" });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.detail || "No se pudo eliminar el presupuesto.");
+            }
+            window.location.href = data.redirect_url;
+        } catch (error) {
+            mostrarToast(error.message || "Error al eliminar.", "error");
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+:root {
+    --sombra-suave: 0 18px 40px rgba(18, 38, 32, 0.08);
+    --radio-xl: 2rem;
+}
+
+body {
+    font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.field span {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(18, 38, 32, 0.65);
+}
+
+.field input,
+.field textarea {
+    width: 100%;
+    border-radius: 1.1rem;
+    border: 1px solid rgba(18, 38, 32, 0.12);
+    background: #fffdfa;
+    padding: 0.9rem 1rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field textarea {
+    min-height: 3rem;
+    resize: vertical;
+}
+
+.field input:focus,
+.field textarea:focus {
+    border-color: rgba(54, 89, 73, 0.65);
+    box-shadow: 0 0 0 4px rgba(54, 89, 73, 0.08);
+}
+
+.escenario-card,
+.rounded-\[2rem\] {
+    box-shadow: var(--sombra-suave);
+}
+
+@media (max-width: 768px) {
+    nav {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Configuracion{% endblock %}
+
+{% block content %}
+<section class="mb-6">
+    <p class="text-sm font-semibold uppercase tracking-[0.25em] text-ladrillo">Configuracion global</p>
+    <h1 class="mt-2 text-4xl font-black">Parametros base de trabajo</h1>
+    <p class="mt-3 max-w-2xl text-black/65">
+        Estos valores se usan como referencia para nuevos presupuestos. El tipo de cambio se toma como default, pero cada presupuesto guarda su propio snapshot.
+    </p>
+    <p class="mt-2 text-sm text-black/55">
+        Tipo de cambio actual: <strong class="text-tinta">ARS {{ configuracion.tipo_de_cambio | numero }}</strong> por USD.
+    </p>
+</section>
+
+<form id="config-form" class="max-w-3xl rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
+    <div class="grid gap-4 md:grid-cols-3">
+        <label class="field">
+            <span>Tipo de cambio</span>
+            <input type="number" min="0.01" step="0.01" name="tipo_de_cambio" value="{{ configuracion.tipo_de_cambio }}" required>
+        </label>
+        <label class="field">
+            <span>Tarifa edicion por pagina</span>
+            <input type="number" min="0" step="0.01" name="tarifa_edicion_por_pagina" value="{{ configuracion.tarifa_edicion_por_pagina }}" required>
+        </label>
+        <label class="field">
+            <span>Tarifa escaneo por pagina</span>
+            <input type="number" min="0" step="0.01" name="tarifa_escaneo_por_pagina" value="{{ configuracion.tarifa_escaneo_por_pagina }}" required>
+        </label>
+    </div>
+
+    <div class="mt-6 flex justify-end">
+        <button type="submit" class="rounded-full bg-bosque px-6 py-3 font-semibold text-white transition hover:bg-[#244839]">
+            Guardar configuracion
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById("config-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const payload = {
+            tipo_de_cambio: Number(form.tipo_de_cambio.value || 0),
+            tarifa_edicion_por_pagina: Number(form.tarifa_edicion_por_pagina.value || 0),
+            tarifa_escaneo_por_pagina: Number(form.tarifa_escaneo_por_pagina.value || 0)
+        };
+
+        try {
+            const response = await fetch("/config", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(extraerMensajeError(data, "No se pudo guardar la configuracion."));
+            }
+            mostrarToast("Configuracion actualizada.");
+        } catch (error) {
+            mostrarToast(error.message || "Ocurrio un error.", "error");
+        }
+    });
+</script>
+{% endblock %}

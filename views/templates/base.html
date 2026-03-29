@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Presupuestos Editoriales{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        tinta: "#122620",
+                        hoja: "#f5f1e8",
+                        bosque: "#365949",
+                        ladrillo: "#a65233",
+                        mostaza: "#d6a448",
+                        niebla: "#ebe5d7"
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="/static/style.css">
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="min-h-screen bg-hoja text-tinta">
+    <div class="fixed inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top_left,_rgba(214,164,72,0.30),_transparent_35%),radial-gradient(circle_at_top_right,_rgba(166,82,51,0.18),_transparent_30%)] pointer-events-none"></div>
+    <header class="relative border-b border-black/5 bg-white/80 backdrop-blur">
+        <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+            <div>
+                <a href="/" class="text-2xl font-black tracking-tight">Firmamento / Orbita Studio</a>
+                <p class="text-sm text-black/60">Sistema interno de presupuestos editoriales</p>
+            </div>
+            <nav class="flex items-center gap-3 text-sm font-semibold">
+                <a href="/" class="rounded-full border border-black/10 px-4 py-2 transition hover:border-bosque hover:text-bosque">Dashboard</a>
+                <a href="/presupuestos/nuevo" class="rounded-full bg-bosque px-4 py-2 text-white transition hover:bg-[#25473a]">Nuevo presupuesto</a>
+                <a href="/config" class="rounded-full border border-black/10 px-4 py-2 transition hover:border-ladrillo hover:text-ladrillo">Configuracion</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="relative mx-auto max-w-7xl px-6 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <div id="toast-container" class="pointer-events-none fixed bottom-5 right-5 z-50 flex w-full max-w-sm flex-col gap-3"></div>
+
+    <script>
+        function mostrarToast(mensaje, tipo = "ok") {
+            const container = document.getElementById("toast-container");
+            const toast = document.createElement("div");
+            toast.className = `pointer-events-auto rounded-2xl border px-4 py-3 shadow-lg backdrop-blur ${
+                tipo === "error"
+                    ? "border-red-300 bg-red-50 text-red-900"
+                    : "border-emerald-300 bg-emerald-50 text-emerald-900"
+            }`;
+            toast.textContent = mensaje;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add("opacity-0", "translate-y-2");
+                setTimeout(() => toast.remove(), 300);
+            }, 2800);
+        }
+
+        function formatearMoneda(valor) {
+            return new Intl.NumberFormat("es-AR", {
+                style: "currency",
+                currency: "ARS",
+                maximumFractionDigits: 2
+            }).format(Number(valor || 0));
+        }
+
+        function formatearNumero(valor) {
+            return new Intl.NumberFormat("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(Number(valor || 0));
+        }
+
+        function extraerMensajeError(payload, fallback = "Ocurrio un error.") {
+            if (!payload) {
+                return fallback;
+            }
+            if (typeof payload.detail === "string") {
+                return payload.detail;
+            }
+            if (Array.isArray(payload.detail)) {
+                return payload.detail
+                    .map((item) => item.msg || item.message || "Error de validacion")
+                    .join(" | ");
+            }
+            if (typeof payload.message === "string") {
+                return payload.message;
+            }
+            return fallback;
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

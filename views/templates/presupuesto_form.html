@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block title %}{% if modo == "editar" %}Editar{% else %}Nuevo{% endif %} presupuesto{% endblock %}
+
+{% block content %}
+<section class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-ladrillo">
+            {% if modo == "editar" %}Edicion{% else %}Alta{% endif %}
+        </p>
+        <h1 class="mt-2 text-4xl font-black">
+            {% if modo == "editar" %}Actualizar presupuesto{% else %}Crear presupuesto{% endif %}
+        </h1>
+        <p class="mt-3 max-w-3xl text-black/65">
+            Carga cabecera, arma hasta dos escenarios y previsualiza el impacto economico en tiempo real sin salir del formulario.
+        </p>
+    </div>
+    <div class="rounded-[1.5rem] border border-black/10 bg-white px-5 py-4 shadow-sm">
+        <p class="text-xs uppercase tracking-[0.2em] text-black/45">Referencia actual</p>
+        <p class="mt-2 text-2xl font-black">ARS {{ configuracion.tipo_de_cambio | numero }}</p>
+        <p class="text-sm text-black/55">Tipo de cambio global vigente por USD</p>
+    </div>
+</section>
+
+<form id="presupuesto-form" class="grid gap-6">
+    <section class="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <label class="field">
+                <span>Nombre del proyecto</span>
+                <input type="text" name="nombre_proyecto" required>
+            </label>
+            <label class="field">
+                <span>Cliente</span>
+                <input type="text" name="cliente" required>
+            </label>
+            <label class="field">
+                <span>Fecha</span>
+                <input type="date" name="fecha" required>
+            </label>
+            <label class="field">
+                <span>Notas generales</span>
+                <textarea name="notas" rows="1" placeholder="Observaciones internas o comerciales"></textarea>
+            </label>
+        </div>
+    </section>
+
+    <section class="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
+        <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h2 class="text-2xl font-black">Escenarios</h2>
+                <p class="text-sm text-black/60">Hasta dos escenarios comparables por presupuesto.</p>
+            </div>
+            <button type="button" id="agregar-escenario" class="rounded-full border border-black/10 px-4 py-3 font-semibold transition hover:border-bosque hover:text-bosque">
+                Agregar segundo escenario
+            </button>
+        </div>
+        <div id="escenarios-container" class="grid gap-6 xl:grid-cols-2"></div>
+    </section>
+
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <a href="{% if modo == 'editar' %}/presupuestos/{{ presupuesto.id }}{% else %}/{% endif %}" class="rounded-full border border-black/10 px-5 py-3 font-semibold transition hover:border-black/30">
+            Cancelar
+        </a>
+        <button type="submit" class="rounded-full bg-bosque px-6 py-3 font-semibold text-white transition hover:bg-[#244839]">
+            {% if modo == "editar" %}Guardar cambios{% else %}Crear presupuesto{% endif %}
+        </button>
+    </div>
+</form>
+
+<template id="escenario-template">
+    <article class="escenario-card rounded-[1.8rem] border border-black/10 bg-hoja p-5">
+        <div class="mb-4 flex items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-ladrillo">Escenario</p>
+                <input type="text" data-field="nombre" class="mt-2 w-full bg-transparent text-2xl font-black outline-none" placeholder="Ej: 50 copias">
+            </div>
+            <button type="button" class="quitar-escenario rounded-full border border-black/10 px-4 py-2 text-sm font-semibold transition hover:border-red-400 hover:text-red-700">
+                Quitar
+            </button>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-3">
+            <label class="field">
+                <span>Cantidad copias</span>
+                <input type="number" min="1" step="1" data-field="cantidad_copias" required>
+            </label>
+            <label class="field">
+                <span>% ganancia</span>
+                <input type="number" min="0" step="0.01" data-field="porcentaje_ganancia" required>
+            </label>
+            <label class="field">
+                <span>Tipo de cambio snapshot</span>
+                <input type="number" min="0.01" step="0.01" data-field="tipo_de_cambio_snapshot" required>
+            </label>
+        </div>
+
+        <div class="mt-5 rounded-[1.5rem] border border-black/10 bg-white p-4">
+            <div class="mb-3 flex items-center justify-between">
+                <h3 class="text-lg font-black">Items</h3>
+                <button type="button" class="agregar-item rounded-full border border-black/10 px-4 py-2 text-sm font-semibold transition hover:border-bosque hover:text-bosque">
+                    Agregar item
+                </button>
+            </div>
+            <div class="mb-4 grid gap-3 rounded-[1.25rem] border border-dashed border-black/10 bg-hoja p-3 md:grid-cols-2">
+                <div class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                    <label class="field">
+                        <span>Paginas edicion</span>
+                        <input type="number" min="1" step="1" data-helper="paginas_edicion" placeholder="Ej: 164">
+                    </label>
+                    <button type="button" class="aplicar-tarifa rounded-full bg-[#e7efe9] px-4 py-3 text-sm font-semibold text-bosque transition hover:bg-[#d6e5db]" data-tarifa="edicion">
+                        Aplicar edicion
+                    </button>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                    <label class="field">
+                        <span>Paginas escaneo</span>
+                        <input type="number" min="1" step="1" data-helper="paginas_escaneo" placeholder="Ej: 64">
+                    </label>
+                    <button type="button" class="aplicar-tarifa rounded-full bg-[#f3e6d4] px-4 py-3 text-sm font-semibold text-ladrillo transition hover:bg-[#ead7bc]" data-tarifa="escaneo">
+                        Aplicar escaneo
+                    </button>
+                </div>
+            </div>
+            <div class="items-container space-y-3"></div>
+        </div>
+
+        <div class="preview-box mt-5 grid gap-3 rounded-[1.5rem] bg-tinta p-4 text-white sm:grid-cols-2">
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-white/60">Subtotal</p>
+                <p class="preview-subtotal mt-1 text-xl font-black">$ 0,00</p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-white/60">Total</p>
+                <p class="preview-total mt-1 text-xl font-black">$ 0,00</p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-white/60">Precio por ejemplar</p>
+                <p class="preview-ejemplar mt-1 text-lg font-bold">$ 0,00</p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-white/60">Precio USD</p>
+                <p class="preview-usd mt-1 text-lg font-bold">0,00</p>
+            </div>
+            <div class="sm:col-span-2">
+                <p class="text-xs uppercase tracking-[0.2em] text-white/60">Ganancia neta</p>
+                <p class="preview-ganancia mt-1 text-lg font-bold">$ 0,00</p>
+            </div>
+        </div>
+    </article>
+</template>
+
+<template id="item-template">
+    <div class="item-row grid gap-3 rounded-[1.25rem] border border-black/10 bg-hoja p-3 md:grid-cols-[1.2fr_0.8fr_1.4fr_auto]">
+        <label class="field">
+            <span>Concepto</span>
+            <input type="text" data-field="nombre" required>
+        </label>
+        <label class="field">
+            <span>Monto ARS</span>
+            <input type="number" min="0" step="0.01" data-field="monto" required>
+        </label>
+        <label class="field">
+            <span>Nota</span>
+            <input type="text" data-field="nota">
+        </label>
+        <div class="flex items-end">
+            <button type="button" class="quitar-item rounded-full border border-black/10 px-4 py-3 text-sm font-semibold transition hover:border-red-400 hover:text-red-700">
+                Quitar
+            </button>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const NOTA_IMPRESION = "Cotizado manualmente en https://print.livriz.com";
+    const configuracion = {{ configuracion | tojson }};
+    const presupuestoInicial = {{ presupuesto | tojson }};
+    const modoFormulario = "{{ modo }}";
+    const presupuestoId = "{{ presupuesto.id if presupuesto.id else '' }}";
+    const form = document.getElementById("presupuesto-form");
+    const escenariosContainer = document.getElementById("escenarios-container");
+    const escenarioTemplate = document.getElementById("escenario-template");
+    const itemTemplate = document.getElementById("item-template");
+    const botonAgregarEscenario = document.getElementById("agregar-escenario");
+
+    function esItemImpresion(nombre) {
+        return String(nombre || "").toLowerCase().includes("impres");
+    }
+
+    function crearInputItem(item = {}) {
+        const fragment = itemTemplate.content.cloneNode(true);
+        const row = fragment.querySelector(".item-row");
+        row.querySelector('[data-field="nombre"]').value = item.nombre || "";
+        row.querySelector('[data-field="monto"]').value = item.monto ?? 0;
+        row.querySelector('[data-field="nota"]').value = item.nota || "";
+
+        const inputNombre = row.querySelector('[data-field="nombre"]');
+        const inputNota = row.querySelector('[data-field="nota"]');
+
+        function sincronizarNotaImpresion() {
+            if (esItemImpresion(inputNombre.value)) {
+                inputNota.value = NOTA_IMPRESION;
+                inputNota.readOnly = true;
+                inputNota.classList.add("opacity-70");
+            } else {
+                if (inputNota.value === NOTA_IMPRESION) {
+                    inputNota.value = "";
+                }
+                inputNota.readOnly = false;
+                inputNota.classList.remove("opacity-70");
+            }
+        }
+
+        inputNombre.addEventListener("input", () => {
+            sincronizarNotaImpresion();
+            programarPreview();
+        });
+        inputNota.addEventListener("input", programarPreview);
+        row.querySelector('[data-field="monto"]').addEventListener("input", programarPreview);
+        row.querySelector(".quitar-item").addEventListener("click", () => {
+            const container = row.closest(".items-container");
+            if (container.children.length === 1) {
+                mostrarToast("Cada escenario necesita al menos un item.", "error");
+                return;
+            }
+            row.remove();
+            programarPreview();
+        });
+
+        sincronizarNotaImpresion();
+        return row;
+    }
+
+    function buscarItemPorNombre(itemsContainer, nombreBuscado) {
+        const nombreNormalizado = String(nombreBuscado || "").trim().toLowerCase();
+        return Array.from(itemsContainer.querySelectorAll(".item-row")).find((row) => {
+            const valor = row.querySelector('[data-field="nombre"]').value.trim().toLowerCase();
+            return valor === nombreNormalizado;
+        });
+    }
+
+    function upsertItemTarifado(itemsContainer, nombre, monto, nota) {
+        let row = buscarItemPorNombre(itemsContainer, nombre);
+        if (!row) {
+            row = crearInputItem({ nombre, monto, nota });
+            itemsContainer.appendChild(row);
+        }
+        row.querySelector('[data-field="nombre"]').value = nombre;
+        row.querySelector('[data-field="monto"]').value = monto;
+        row.querySelector('[data-field="nota"]').value = nota;
+        row.querySelector('[data-field="nota"]').readOnly = false;
+        row.querySelector('[data-field="nota"]').classList.remove("opacity-70");
+    }
+
+    function crearEscenarioCard(escenario = {}) {
+        const fragment = escenarioTemplate.content.cloneNode(true);
+        const card = fragment.querySelector(".escenario-card");
+        card.querySelector('[data-field="nombre"]').value = escenario.nombre || `Escenario ${escenariosContainer.children.length + 1}`;
+        card.querySelector('[data-field="cantidad_copias"]').value = escenario.cantidad_copias ?? 50;
+        card.querySelector('[data-field="porcentaje_ganancia"]').value = escenario.porcentaje_ganancia ?? 45;
+        card.querySelector('[data-field="tipo_de_cambio_snapshot"]').value = escenario.tipo_de_cambio_snapshot ?? configuracion.tipo_de_cambio;
+
+        card.querySelectorAll("input").forEach((input) => {
+            input.addEventListener("input", programarPreview);
+        });
+
+        const itemsContainer = card.querySelector(".items-container");
+        const items = escenario.items?.length ? escenario.items : [{ nombre: "Impresion", monto: 0, nota: NOTA_IMPRESION }];
+        items.forEach((item) => itemsContainer.appendChild(crearInputItem(item)));
+
+        const inputPaginasEdicion = card.querySelector('[data-helper="paginas_edicion"]');
+        const inputPaginasEscaneo = card.querySelector('[data-helper="paginas_escaneo"]');
+
+        function aplicarTarifaBase(tipo) {
+            const esEdicion = tipo === "edicion";
+            const inputPaginas = esEdicion ? inputPaginasEdicion : inputPaginasEscaneo;
+            const paginas = Number(inputPaginas.value || 0);
+            if (paginas <= 0) {
+                mostrarToast("Ingresa una cantidad de paginas valida antes de aplicar la tarifa.", "error");
+                inputPaginas.focus();
+                return;
+            }
+
+            const tarifa = esEdicion
+                ? Number(configuracion.tarifa_edicion_por_pagina || 0)
+                : Number(configuracion.tarifa_escaneo_por_pagina || 0);
+            const nombre = esEdicion ? "Edicion interior" : "Escaneo";
+            const monto = Number((paginas * tarifa).toFixed(2));
+            const nota = `${paginas} pags x $${formatearNumero(tarifa)}`;
+            upsertItemTarifado(itemsContainer, nombre, monto, nota);
+            programarPreview();
+            mostrarToast(`${nombre} actualizado con tarifa base.`);
+        }
+
+        card.querySelector(".agregar-item").addEventListener("click", () => {
+            itemsContainer.appendChild(crearInputItem({ nombre: "", monto: 0, nota: "" }));
+            programarPreview();
+        });
+
+        card.querySelectorAll(".aplicar-tarifa").forEach((button) => {
+            button.addEventListener("click", () => aplicarTarifaBase(button.dataset.tarifa));
+        });
+
+        card.querySelector(".quitar-escenario").addEventListener("click", () => {
+            card.remove();
+            refrescarBotonEscenario();
+            programarPreview();
+        });
+
+        return card;
+    }
+
+    function refrescarBotonEscenario() {
+        botonAgregarEscenario.disabled = escenariosContainer.children.length >= 2;
+        botonAgregarEscenario.classList.toggle("opacity-50", botonAgregarEscenario.disabled);
+        botonAgregarEscenario.classList.toggle("cursor-not-allowed", botonAgregarEscenario.disabled);
+    }
+
+    function cargarCabecera() {
+        form.querySelector('[name="nombre_proyecto"]').value = presupuestoInicial.nombre_proyecto || "";
+        form.querySelector('[name="cliente"]').value = presupuestoInicial.cliente || "";
+        form.querySelector('[name="fecha"]').value = presupuestoInicial.fecha || new Date().toISOString().slice(0, 10);
+        form.querySelector('[name="notas"]').value = presupuestoInicial.notas || "";
+    }
+
+    function serializarEscenario(card) {
+        const items = Array.from(card.querySelectorAll(".item-row")).map((row) => ({
+            nombre: row.querySelector('[data-field="nombre"]').value.trim(),
+            monto: Number(row.querySelector('[data-field="monto"]').value || 0),
+            nota: row.querySelector('[data-field="nota"]').value.trim() || null
+        }));
+
+        return {
+            nombre: card.querySelector('[data-field="nombre"]').value.trim(),
+            cantidad_copias: Number(card.querySelector('[data-field="cantidad_copias"]').value || 0),
+            porcentaje_ganancia: Number(card.querySelector('[data-field="porcentaje_ganancia"]').value || 0),
+            tipo_de_cambio_snapshot: Number(card.querySelector('[data-field="tipo_de_cambio_snapshot"]').value || 0),
+            items
+        };
+    }
+
+    function serializarFormulario() {
+        return {
+            nombre_proyecto: form.querySelector('[name="nombre_proyecto"]').value.trim(),
+            cliente: form.querySelector('[name="cliente"]').value.trim(),
+            fecha: form.querySelector('[name="fecha"]').value,
+            notas: form.querySelector('[name="notas"]').value.trim() || null,
+            escenarios: Array.from(escenariosContainer.children).map(serializarEscenario)
+        };
+    }
+
+    async function actualizarPreviewCard(card) {
+        const escenario = serializarEscenario(card);
+        const hayCamposVacios = !escenario.nombre || escenario.cantidad_copias <= 0 || escenario.tipo_de_cambio_snapshot <= 0 || !escenario.items.length || escenario.items.some((item) => !item.nombre);
+        if (hayCamposVacios) {
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/calcular", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(escenario)
+            });
+            if (!response.ok) {
+                return;
+            }
+            const data = await response.json();
+            card.querySelector(".preview-subtotal").textContent = formatearMoneda(data.subtotal);
+            card.querySelector(".preview-total").textContent = formatearMoneda(data.total);
+            card.querySelector(".preview-ejemplar").textContent = formatearMoneda(data.precio_por_ejemplar);
+            card.querySelector(".preview-usd").textContent = formatearNumero(data.precio_usd);
+            card.querySelector(".preview-ganancia").textContent = formatearMoneda(data.ganancia_neta_pesos);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    let previewTimer = null;
+    function programarPreview() {
+        clearTimeout(previewTimer);
+        previewTimer = setTimeout(() => {
+            Array.from(escenariosContainer.children).forEach((card) => actualizarPreviewCard(card));
+        }, 250);
+    }
+
+    botonAgregarEscenario.addEventListener("click", () => {
+        if (escenariosContainer.children.length >= 2) {
+            mostrarToast("Solo se permiten hasta dos escenarios por presupuesto.", "error");
+            return;
+        }
+        escenariosContainer.appendChild(crearEscenarioCard({
+            nombre: `Escenario ${escenariosContainer.children.length + 1}`,
+            cantidad_copias: 100,
+            porcentaje_ganancia: 45,
+            tipo_de_cambio_snapshot: configuracion.tipo_de_cambio,
+            items: [{ nombre: "Impresion", monto: 0, nota: NOTA_IMPRESION }]
+        }));
+        refrescarBotonEscenario();
+        programarPreview();
+    });
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const payload = serializarFormulario();
+        const url = modoFormulario === "editar" ? `/presupuestos/${presupuestoId}` : "/presupuestos";
+        const method = modoFormulario === "editar" ? "PUT" : "POST";
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(extraerMensajeError(data, "No se pudo guardar el presupuesto."));
+            }
+            mostrarToast(modoFormulario === "editar" ? "Presupuesto actualizado." : "Presupuesto creado.");
+            window.location.href = data.redirect_url;
+        } catch (error) {
+            mostrarToast(error.message || "Ocurrio un error al guardar.", "error");
+        }
+    });
+
+    cargarCabecera();
+    (presupuestoInicial.escenarios || []).forEach((escenario) => escenariosContainer.appendChild(crearEscenarioCard(escenario)));
+    refrescarBotonEscenario();
+    programarPreview();
+</script>
+{% endblock %}
