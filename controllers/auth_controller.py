@@ -1,16 +1,22 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Form, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from controllers.controller_utils import (
     construir_contexto,
+    exigir_login_api,
     exigir_login_html,
     obtener_ip_cliente,
     obtener_next_seguro,
     obtener_usuario_sesion,
 )
-from models.auth_model import autenticar_usuario
+from models.auth_model import (
+    autenticar_usuario,
+    actualizar_password_admin,
+    obtener_estado_credenciales,
+)
+from models.schemas import PasswordAdminUpdate
 from settings import get_settings
 from views import templates
 
@@ -77,3 +83,36 @@ async def logout(request: Request):
         return maybe_redirect
     request.session.clear()
     return RedirectResponse(url="/login", status_code=303)
+
+
+@router.get("/mi-cuenta", response_class=HTMLResponse)
+async def ver_mi_cuenta(request: Request):
+    auth_guard = exigir_login_html(request)
+    if isinstance(auth_guard, RedirectResponse):
+        return auth_guard
+    credenciales = obtener_estado_credenciales()
+    return templates.TemplateResponse(
+        request,
+        "account.html",
+        construir_contexto(
+            request,
+            credenciales=credenciales,
+        ),
+    )
+
+
+@router.put("/mi-cuenta/password")
+async def guardar_password_mi_cuenta(request: Request, datos: PasswordAdminUpdate):
+    exigir_login_api(request)
+    try:
+        credenciales = actualizar_password_admin(datos)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+    request.session["auth_user"] = credenciales["username"]
+    return JSONResponse(
+        {
+            "ok": True,
+            "credenciales": credenciales,
+        }
+    )

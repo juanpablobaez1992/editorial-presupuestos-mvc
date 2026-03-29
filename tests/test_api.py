@@ -19,6 +19,13 @@ def test_rutas_privadas_redirigen_a_login_sin_sesion(client: TestClient) -> None
     assert response.headers["location"].startswith("/login")
 
 
+def test_mi_cuenta_redirige_a_login_sin_sesion(client: TestClient) -> None:
+    response = client.get("/mi-cuenta", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/login")
+
+
 def test_formulario_muestra_presets_inteligentes(authenticated_client: TestClient) -> None:
     response = authenticated_client.get("/presupuestos/nuevo")
 
@@ -38,6 +45,15 @@ def test_config_muestra_panel_de_credenciales(authenticated_client: TestClient) 
     assert "Cambiar credenciales" in html
     assert "Usuario activo" in html
     assert "Entorno" in html
+
+
+def test_mi_cuenta_muestra_formulario_de_password(authenticated_client: TestClient) -> None:
+    response = authenticated_client.get("/mi-cuenta")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Actualizar contrasena" in html
+    assert "Guardar nueva contrasena" in html
 
 
 def test_crear_presupuesto_con_presets_y_escenarios(authenticated_client: TestClient) -> None:
@@ -217,6 +233,61 @@ def test_config_rechaza_cambio_de_credenciales_con_password_actual_incorrecta(
             "nuevo_username": "admin_firmamento",
             "nueva_password": "ClaveFuerte2026!",
             "confirmar_password": "ClaveFuerte2026!",
+        },
+    )
+
+    assert response.status_code == 400
+    assert "actual" in response.text
+
+
+def test_mi_cuenta_permite_cambiar_solo_password_y_reingresar(authenticated_client: TestClient) -> None:
+    response = authenticated_client.put(
+        "/mi-cuenta/password",
+        json={
+            "current_password": "Admin123!!",
+            "nueva_password": "OtraClave2026!",
+            "confirmar_password": "OtraClave2026!",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["credenciales"]["username"] == "admin"
+    assert body["credenciales"]["origen"] == "base_de_datos"
+
+    logout_response = authenticated_client.post("/logout", follow_redirects=False)
+    assert logout_response.status_code == 303
+
+    old_login_response = authenticated_client.post(
+        "/login",
+        data={
+            "username": "admin",
+            "password": "Admin123!!",
+            "next": "/",
+        },
+    )
+    assert old_login_response.status_code == 401
+
+    new_login_response = authenticated_client.post(
+        "/login",
+        data={
+            "username": "admin",
+            "password": "OtraClave2026!",
+            "next": "/",
+        },
+        follow_redirects=False,
+    )
+    assert new_login_response.status_code == 303
+    assert new_login_response.headers["location"] == "/"
+
+
+def test_mi_cuenta_rechaza_password_actual_incorrecta(authenticated_client: TestClient) -> None:
+    response = authenticated_client.put(
+        "/mi-cuenta/password",
+        json={
+            "current_password": "NoEsLaActual123!",
+            "nueva_password": "OtraClave2026!",
+            "confirmar_password": "OtraClave2026!",
         },
     )
 

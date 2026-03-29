@@ -36,6 +36,7 @@
                 {% if auth_user %}
                 <a href="/" class="rounded-full border border-black/10 px-4 py-2 transition hover:border-bosque hover:text-bosque">Dashboard</a>
                 <a href="/presupuestos/nuevo" class="rounded-full bg-bosque px-4 py-2 text-white transition hover:bg-[#25473a]">Nuevo presupuesto</a>
+                <a href="/mi-cuenta" class="rounded-full border border-black/10 px-4 py-2 transition hover:border-bosque hover:text-bosque">Mi cuenta</a>
                 <a href="/config" class="rounded-full border border-black/10 px-4 py-2 transition hover:border-ladrillo hover:text-ladrillo">Configuracion</a>
                 <span class="rounded-full border border-black/10 px-4 py-2 text-black/65">{{ auth_user }}</span>
                 <form method="post" action="/logout">

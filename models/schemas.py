@@ -164,18 +164,35 @@ class CredencialesAdminUpdate(BaseModel):
             raise ValueError("El usuario no puede contener espacios.")
         return limpio
 
+    @staticmethod
+    def _validar_password_segura(password: str) -> None:
+        if not any(char.islower() for char in password):
+            raise ValueError("La nueva contrasena debe incluir minusculas.")
+        if not any(char.isupper() for char in password):
+            raise ValueError("La nueva contrasena debe incluir mayusculas.")
+        if not any(char.isdigit() for char in password):
+            raise ValueError("La nueva contrasena debe incluir numeros.")
+        if password.isalnum():
+            raise ValueError("La nueva contrasena debe incluir al menos un simbolo.")
+
     @model_validator(mode="after")
     def validar_password(self) -> "CredencialesAdminUpdate":
         if self.nueva_password != self.confirmar_password:
             raise ValueError("La nueva contrasena y su confirmacion no coinciden.")
-        if not any(char.islower() for char in self.nueva_password):
-            raise ValueError("La nueva contrasena debe incluir minusculas.")
-        if not any(char.isupper() for char in self.nueva_password):
-            raise ValueError("La nueva contrasena debe incluir mayusculas.")
-        if not any(char.isdigit() for char in self.nueva_password):
-            raise ValueError("La nueva contrasena debe incluir numeros.")
-        if self.nueva_password.isalnum():
-            raise ValueError("La nueva contrasena debe incluir al menos un simbolo.")
+        self._validar_password_segura(self.nueva_password)
+        return self
+
+
+class PasswordAdminUpdate(BaseModel):
+    current_password: str = Field(..., min_length=1, max_length=200)
+    nueva_password: str = Field(..., min_length=12, max_length=200)
+    confirmar_password: str = Field(..., min_length=12, max_length=200)
+
+    @model_validator(mode="after")
+    def validar_password(self) -> "PasswordAdminUpdate":
+        if self.nueva_password != self.confirmar_password:
+            raise ValueError("La nueva contrasena y su confirmacion no coinciden.")
+        CredencialesAdminUpdate._validar_password_segura(self.nueva_password)
         return self
 
 

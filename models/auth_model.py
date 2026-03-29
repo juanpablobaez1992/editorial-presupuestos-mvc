@@ -7,7 +7,7 @@ from pwdlib import PasswordHash
 
 from database import get_connection
 from settings import get_settings
-from models.schemas import CredencialesAdminUpdate
+from models.schemas import CredencialesAdminUpdate, PasswordAdminUpdate
 
 
 password_hasher = PasswordHash.recommended()
@@ -168,6 +168,32 @@ def actualizar_credenciales_admin(datos: CredencialesAdminUpdate) -> dict[str, s
             """,
             [
                 ("auth_admin_username", datos.nuevo_username),
+                ("auth_password_hash", nuevo_hash),
+            ],
+        )
+        connection.execute("DELETE FROM auth_intentos")
+
+    return obtener_estado_credenciales()
+
+
+def actualizar_password_admin(datos: PasswordAdminUpdate) -> dict[str, str]:
+    credenciales = obtener_credenciales_admin()
+    password_actual_valida = password_hasher.verify(datos.current_password, credenciales["password_hash"])
+    if not password_actual_valida:
+        raise ValueError("La contrasena actual no es correcta.")
+
+    nuevo_hash = password_hasher.hash(datos.nueva_password)
+    with get_connection() as connection:
+        connection.executemany(
+            """
+            INSERT INTO configuracion (clave, valor, updated_at)
+            VALUES (?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(clave) DO UPDATE SET
+                valor = excluded.valor,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            [
+                ("auth_admin_username", credenciales["username"]),
                 ("auth_password_hash", nuevo_hash),
             ],
         )
