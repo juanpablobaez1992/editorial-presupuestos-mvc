@@ -22,6 +22,7 @@ body {
 }
 
 .field input,
+.field select,
 .field textarea {
     width: 100%;
     border-radius: 1.1rem;
@@ -35,6 +36,7 @@ body {
 }
 
 .field input::placeholder,
+.field select::placeholder,
 .field textarea::placeholder {
     color: rgba(18, 38, 32, 0.4);
 }
@@ -45,6 +47,7 @@ body {
 }
 
 .field input:focus,
+.field select:focus,
 .field textarea:focus {
     border-color: rgba(54, 89, 73, 0.65);
     box-shadow: 0 0 0 4px rgba(54, 89, 73, 0.08);
@@ -55,6 +58,7 @@ body {
 }
 
 .field-oscuro input,
+.field-oscuro select,
 .field-oscuro textarea {
     border-color: rgba(255, 255, 255, 0.14);
     background: rgba(255, 253, 250, 0.98);

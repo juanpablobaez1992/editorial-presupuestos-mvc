@@ -3,18 +3,18 @@
 {% block title %}Mi cuenta{% endblock %}
 
 {% block content %}
-<section class="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+<section class="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
     <article class="rounded-[2rem] border border-black/10 bg-white p-8 shadow-sm">
         <p class="text-sm font-semibold uppercase tracking-[0.25em] text-ladrillo">Mi cuenta</p>
-        <h1 class="mt-3 text-4xl font-black leading-tight">Cambiar solo la contrasena, sin tocar la configuracion global.</h1>
+        <h1 class="mt-3 text-4xl font-black leading-tight">Seguridad administrativa y segundo factor en un solo lugar.</h1>
         <p class="mt-4 max-w-2xl text-black/65">
-            Este panel sirve para rotar la clave administrativa de forma rapida. El usuario se conserva tal como esta y la nueva clave queda guardada en la base de datos.
+            Desde esta pantalla podes rotar la contrasena y administrar TOTP para endurecer el acceso al subdominio.
         </p>
 
         <div class="mt-8 grid gap-4 sm:grid-cols-2">
             <div class="rounded-[1.5rem] bg-hoja p-4">
                 <p class="text-xs uppercase tracking-[0.2em] text-black/45">Usuario activo</p>
-                <p class="mt-2 text-lg font-black">{{ credenciales.username }}</p>
+                <p id="cuenta-username" class="mt-2 text-lg font-black">{{ credenciales.username }}</p>
             </div>
             <div class="rounded-[1.5rem] bg-hoja p-4">
                 <p class="text-xs uppercase tracking-[0.2em] text-black/45">Origen actual</p>
@@ -23,38 +23,110 @@
                 </p>
             </div>
         </div>
+
+        <div class="mt-6 rounded-[1.6rem] border border-black/10 bg-hoja p-5">
+            <p class="text-xs uppercase tracking-[0.2em] text-black/45">Doble factor</p>
+            <h2 class="mt-2 text-2xl font-black">TOTP</h2>
+            <p class="mt-2 text-black/65">
+                Estado actual:
+                <strong id="totp-estado-texto" class="text-tinta">
+                    {% if totp.habilitado %}Activo{% elif totp.secret_present %}Pendiente de activacion{% else %}Inactivo{% endif %}
+                </strong>
+            </p>
+            <div id="totp-secret-box" class="mt-4 rounded-[1.2rem] border border-black/10 bg-white p-4 {% if not totp.secret_present %}hidden{% endif %}">
+                <p class="text-xs uppercase tracking-[0.2em] text-black/45">Clave manual</p>
+                <p id="totp-manual-key" class="mt-2 break-all text-lg font-black">{{ totp.manual_entry_key }}</p>
+                <p class="mt-2 text-sm text-black/60">Si la app autenticadora no escanea QR, podes cargar esta clave manualmente.</p>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-3">
+                <button id="totp-preparar-btn" type="button" class="rounded-full border border-black/10 px-4 py-3 text-sm font-semibold transition hover:border-bosque hover:text-bosque">
+                    Generar secreto TOTP
+                </button>
+            </div>
+        </div>
     </article>
 
-    <article class="rounded-[2rem] border border-black/10 bg-tinta p-8 text-white shadow-sm">
-        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-white/55">Seguridad</p>
-        <h2 class="mt-3 text-3xl font-black">Actualizar contrasena</h2>
-        <p class="mt-3 text-white/70">
-            La nueva contrasena debe tener al menos 12 caracteres, mayusculas, minusculas, numeros y un simbolo.
-        </p>
+    <div class="grid gap-6">
+        <article class="rounded-[2rem] border border-black/10 bg-tinta p-8 text-white shadow-sm">
+            <p class="text-sm font-semibold uppercase tracking-[0.25em] text-white/55">Seguridad</p>
+            <h2 class="mt-3 text-3xl font-black">Actualizar contrasena</h2>
+            <p class="mt-3 text-white/70">
+                La nueva contrasena debe tener al menos 12 caracteres, mayusculas, minusculas, numeros y un simbolo.
+            </p>
 
-        <form id="password-form" class="mt-6 grid gap-4">
-            <label class="field field-oscuro">
-                <span>Contrasena actual</span>
-                <input type="password" name="current_password" autocomplete="current-password" required>
-            </label>
-            <label class="field field-oscuro">
-                <span>Nueva contrasena</span>
-                <input type="password" name="nueva_password" minlength="12" autocomplete="new-password" required>
-            </label>
-            <label class="field field-oscuro">
-                <span>Confirmar contrasena</span>
-                <input type="password" name="confirmar_password" minlength="12" autocomplete="new-password" required>
-            </label>
-            <button class="mt-2 rounded-full bg-bosque px-6 py-3 font-semibold text-white transition hover:bg-[#25473a]">
-                Guardar nueva contrasena
-            </button>
-        </form>
-    </article>
+            <form id="password-form" class="mt-6 grid gap-4">
+                <label class="field field-oscuro">
+                    <span>Contrasena actual</span>
+                    <input type="password" name="current_password" autocomplete="current-password" required>
+                </label>
+                <label class="field field-oscuro">
+                    <span>Nueva contrasena</span>
+                    <input type="password" name="nueva_password" minlength="12" autocomplete="new-password" required>
+                </label>
+                <label class="field field-oscuro">
+                    <span>Confirmar contrasena</span>
+                    <input type="password" name="confirmar_password" minlength="12" autocomplete="new-password" required>
+                </label>
+                <button class="mt-2 rounded-full bg-bosque px-6 py-3 font-semibold text-white transition hover:bg-[#25473a]">
+                    Guardar nueva contrasena
+                </button>
+            </form>
+        </article>
+
+        <article class="rounded-[2rem] border border-black/10 bg-white p-8 shadow-sm">
+            <p class="text-sm font-semibold uppercase tracking-[0.25em] text-ladrillo">Doble factor</p>
+            <h2 class="mt-3 text-3xl font-black">Activar o desactivar TOTP</h2>
+            <p class="mt-3 text-black/65">
+                Genera el secreto, registralo en tu app autenticadora y valida un codigo para dejar el segundo factor activo.
+            </p>
+
+            <form id="totp-activar-form" class="mt-6 grid gap-4">
+                <label class="field">
+                    <span>Contrasena actual</span>
+                    <input type="password" name="current_password" autocomplete="current-password" required>
+                </label>
+                <label class="field">
+                    <span>Codigo TOTP</span>
+                    <input type="text" name="codigo" inputmode="numeric" placeholder="123456" required>
+                </label>
+                <div class="flex flex-wrap gap-3">
+                    <button type="submit" class="rounded-full bg-bosque px-5 py-3 font-semibold text-white transition hover:bg-[#25473a]">
+                        Activar TOTP
+                    </button>
+                    <button id="totp-desactivar-btn" type="button" class="rounded-full border border-black/10 px-5 py-3 font-semibold transition hover:border-red-400 hover:text-red-700">
+                        Desactivar TOTP
+                    </button>
+                </div>
+            </form>
+        </article>
+    </div>
 </section>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    const totpState = {{ totp | tojson }};
+
+    function renderTotpState(state) {
+        const text = state.habilitado
+            ? "Activo"
+            : state.secret_present
+                ? "Pendiente de activacion"
+                : "Inactivo";
+        document.getElementById("totp-estado-texto").textContent = text;
+        const secretBox = document.getElementById("totp-secret-box");
+        const secretText = document.getElementById("totp-manual-key");
+        if (state.secret_present) {
+            secretBox.classList.remove("hidden");
+            secretText.textContent = state.manual_entry_key || "";
+        } else {
+            secretBox.classList.add("hidden");
+            secretText.textContent = "";
+        }
+    }
+
+    renderTotpState(totpState);
+
     document.getElementById("password-form").addEventListener("submit", async (event) => {
         event.preventDefault();
         const form = event.currentTarget;
@@ -75,11 +147,77 @@
                 throw new Error(extraerMensajeError(data, "No se pudo actualizar la contrasena."));
             }
 
+            document.getElementById("cuenta-username").textContent = data.credenciales.username;
             document.getElementById("password-origen").textContent = data.credenciales.origen === "base_de_datos"
                 ? "Base de datos"
                 : "Entorno";
             form.reset();
             mostrarToast("Contrasena actualizada.");
+        } catch (error) {
+            mostrarToast(error.message || "Ocurrio un error.", "error");
+        }
+    });
+
+    document.getElementById("totp-preparar-btn").addEventListener("click", async () => {
+        try {
+            const response = await fetch("/mi-cuenta/2fa/preparar", { method: "POST" });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(extraerMensajeError(data, "No se pudo preparar TOTP."));
+            }
+            Object.assign(totpState, data.totp);
+            renderTotpState(totpState);
+            mostrarToast("Secreto TOTP generado. Cargalo en tu app y luego activa el segundo factor.");
+        } catch (error) {
+            mostrarToast(error.message || "Ocurrio un error.", "error");
+        }
+    });
+
+    document.getElementById("totp-activar-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const payload = {
+            current_password: form.current_password.value,
+            codigo: form.codigo.value
+        };
+
+        try {
+            const response = await fetch("/mi-cuenta/2fa/activar", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(extraerMensajeError(data, "No se pudo activar TOTP."));
+            }
+            Object.assign(totpState, data.totp);
+            renderTotpState(totpState);
+            form.reset();
+            mostrarToast("TOTP activado.");
+        } catch (error) {
+            mostrarToast(error.message || "Ocurrio un error.", "error");
+        }
+    });
+
+    document.getElementById("totp-desactivar-btn").addEventListener("click", async () => {
+        const password = window.prompt("Ingresa tu contrasena actual para desactivar TOTP:");
+        if (!password) {
+            return;
+        }
+        try {
+            const response = await fetch("/mi-cuenta/2fa/desactivar", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ current_password: password })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(extraerMensajeError(data, "No se pudo desactivar TOTP."));
+            }
+            Object.assign(totpState, data.totp);
+            renderTotpState(totpState);
+            mostrarToast("TOTP desactivado.");
         } catch (error) {
             mostrarToast(error.message || "Ocurrio un error.", "error");
         }

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
+import pyotp
 from fastapi.testclient import TestClient
 
 import database
@@ -13,6 +14,7 @@ def _payload_presupuesto_demo() -> dict:
         "cliente": "Cliente Demo",
         "fecha": date(2026, 3, 28).isoformat(),
         "notas": "Version inicial",
+        "tipo_proyecto_clave": None,
         "escenarios": [
             {
                 "nombre": "50 copias",
@@ -55,9 +57,26 @@ def test_formulario_muestra_presets_inteligentes(authenticated_client: TestClien
     assert response.status_code == 200
     html = response.text
     assert "Presets inteligentes" in html
+    assert "Tipos de proyecto" in html
+    assert "Novela" in html
     assert "ISBN" in html
     assert "Banner" in html
     assert "Diseno tapas" in html
+
+
+def test_dashboard_muestra_metricas(authenticated_client: TestClient) -> None:
+    payload = _payload_presupuesto_demo()
+    payload["tipo_proyecto_clave"] = "novela"
+    authenticated_client.post("/presupuestos", json=payload)
+
+    response = authenticated_client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Ticket promedio" in html
+    assert "Cliente top" in html
+    assert "Escenarios dobles" in html
+    assert "Novela" in html or "novela" in html
 
 
 def test_config_muestra_panel_de_credenciales(authenticated_client: TestClient) -> None:
@@ -85,6 +104,7 @@ def test_crear_presupuesto_con_presets_y_escenarios(authenticated_client: TestCl
         "cliente": "Cliente Demo",
         "fecha": date(2026, 3, 28).isoformat(),
         "notas": "Incluye presets de tapa, banner e ISBN",
+        "tipo_proyecto_clave": "catalogo",
         "escenarios": [
             {
                 "nombre": "40 copias",
@@ -117,6 +137,7 @@ def test_crear_presupuesto_con_presets_y_escenarios(authenticated_client: TestCl
     body = response.json()["presupuesto"]
     assert body["escenario_referencia_nombre"] == "40 copias"
     assert body["escenarios"][0]["items"][0]["nota"] == "Cotizado manualmente en https://print.livriz.com"
+    assert body["tipo_proyecto_clave"] == "catalogo"
 
 
 def test_crear_presupuesto_registra_version_inicial(authenticated_client: TestClient) -> None:
@@ -144,7 +165,9 @@ def test_crear_presupuesto_registra_version_inicial(authenticated_client: TestCl
 
 
 def test_detalle_muestra_historial_de_versiones(authenticated_client: TestClient) -> None:
-    crear = authenticated_client.post("/presupuestos", json=_payload_presupuesto_demo())
+    payload = _payload_presupuesto_demo()
+    payload["tipo_proyecto_clave"] = "novela"
+    crear = authenticated_client.post("/presupuestos", json=payload)
     presupuesto_id = crear.json()["presupuesto"]["id"]
 
     response = authenticated_client.get(f"/presupuestos/{presupuesto_id}")
@@ -154,6 +177,8 @@ def test_detalle_muestra_historial_de_versiones(authenticated_client: TestClient
     assert "Historial" in html
     assert "Version 1" in html
     assert "Actual" in html
+    assert "Exportar PDF" in html
+    assert "Novela" in html or "novela" in html
 
 
 def test_actualizar_presupuesto_registra_nueva_version_con_cambios(authenticated_client: TestClient) -> None:
@@ -303,6 +328,17 @@ def test_login_bloquea_ruta_api_sin_sesion(client: TestClient) -> None:
     assert response.status_code == 401
 
 
+def test_export_pdf_responde_archivo(authenticated_client: TestClient) -> None:
+    crear = authenticated_client.post("/presupuestos", json=_payload_presupuesto_demo())
+    presupuesto_id = crear.json()["presupuesto"]["id"]
+
+    response = authenticated_client.get(f"/presupuestos/{presupuesto_id}/export/pdf")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/pdf")
+    assert response.content.startswith(b"%PDF")
+
+
 def test_login_bloquea_temporalmente_tras_intentos_fallidos(client: TestClient) -> None:
     for _ in range(5):
         response = client.post(
@@ -430,3 +466,66 @@ def test_mi_cuenta_rechaza_password_actual_incorrecta(authenticated_client: Test
 
     assert response.status_code == 400
     assert "actual" in response.text
+
+
+def test_mi_cuenta_permite_preparar_y_activar_totp(authenticated_client: TestClient) -> None:
+    preparar = authenticated_client.post("/mi-cuenta/2fa/preparar")
+
+    assert preparar.status_code == 200
+    data_preparar = preparar.json()
+    assert data_preparar["totp"]["secret_present"] is True
+    assert data_preparar["totp"]["habilitado"] is False
+
+    secret = data_preparar["totp"]["secret"]
+    codigo = pyotp.TOTP(secret).now()
+    activar = authenticated_client.put(
+        "/mi-cuenta/2fa/activar",
+        json={
+            "current_password": "Admin123!!",
+            "codigo": codigo,
+        },
+    )
+
+    assert activar.status_code == 200
+    data_activar = activar.json()
+    assert data_activar["totp"]["habilitado"] is True
+
+
+def test_login_con_totp_requiere_segundo_factor(authenticated_client: TestClient) -> None:
+    preparar = authenticated_client.post("/mi-cuenta/2fa/preparar")
+    secret = preparar.json()["totp"]["secret"]
+    codigo = pyotp.TOTP(secret).now()
+    activar = authenticated_client.put(
+        "/mi-cuenta/2fa/activar",
+        json={
+            "current_password": "Admin123!!",
+            "codigo": codigo,
+        },
+    )
+    assert activar.status_code == 200
+
+    logout_response = authenticated_client.post("/logout", follow_redirects=False)
+    assert logout_response.status_code == 303
+
+    primer_factor = authenticated_client.post(
+        "/login",
+        data={
+            "username": "admin",
+            "password": "Admin123!!",
+            "next": "/",
+        },
+        follow_redirects=False,
+    )
+    assert primer_factor.status_code == 303
+    assert "/login/2fa" in primer_factor.headers["location"]
+
+    segundo_factor = authenticated_client.post(
+        "/login/2fa",
+        data={
+            "codigo": pyotp.TOTP(secret).now(),
+            "next": "/",
+        },
+        follow_redirects=False,
+    )
+    assert segundo_factor.status_code == 303
+    assert segundo_factor.headers["location"] == "/"

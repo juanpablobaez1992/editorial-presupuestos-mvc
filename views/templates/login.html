@@ -9,7 +9,7 @@
         <h1 class="mt-3 text-4xl font-black leading-tight">Presupuestos internos con login fuerte y sesion segura.</h1>
         <p class="mt-4 max-w-2xl text-black/65">
             Esta instancia esta preparada para operar en un subdominio propio, con cookie de sesion endurecida,
-            bloqueo temporal por intentos fallidos y despliegue pensado para VPS con TLS.
+            bloqueo temporal por intentos fallidos, historial de cambios y soporte para doble factor TOTP.
         </p>
 
         <div class="mt-8 grid gap-4 sm:grid-cols-3">
@@ -32,7 +32,7 @@
         <p class="text-sm font-semibold uppercase tracking-[0.25em] text-white/55">Login</p>
         <h2 class="mt-3 text-3xl font-black">Ingresar al sistema</h2>
         <p class="mt-3 text-white/70">
-            Usa las credenciales administrativas configuradas por entorno. En produccion deben vivir en variables seguras del VPS.
+            Usa las credenciales administrativas activas. Si la cuenta tiene 2FA habilitado, despues del usuario y la contrasena vas a confirmar el acceso con TOTP.
         </p>
 
         {% if error %}

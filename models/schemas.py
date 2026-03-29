@@ -82,11 +82,20 @@ class PresupuestoBase(BaseModel):
     fecha: date
     escenarios: list[EscenarioCreate] = Field(..., min_length=1, max_length=2)
     notas: str | None = Field(default=None, max_length=1000)
+    tipo_proyecto_clave: str | None = Field(default=None, max_length=60)
 
     @field_validator("nombre_proyecto", "cliente")
     @classmethod
     def validar_textos(cls, value: str) -> str:
         return value.strip()
+
+    @field_validator("tipo_proyecto_clave")
+    @classmethod
+    def limpiar_tipo_proyecto(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        limpio = value.strip().lower()
+        return limpio or None
 
     @field_validator("notas")
     @classmethod
@@ -118,6 +127,7 @@ class PresupuestoResumen(BaseModel):
     cliente: str
     fecha: date
     notas: str | None = None
+    tipo_proyecto_clave: str | None = None
     total_ars_referencia: float
     total_usd_referencia: float
     cantidad_escenarios: int
@@ -130,6 +140,7 @@ class PresupuestoResponse(BaseModel):
     cliente: str
     fecha: date
     notas: str | None = None
+    tipo_proyecto_clave: str | None = None
     escenarios: list[EscenarioResponse]
 
 
@@ -194,6 +205,42 @@ class PasswordAdminUpdate(BaseModel):
             raise ValueError("La nueva contrasena y su confirmacion no coinciden.")
         CredencialesAdminUpdate._validar_password_segura(self.nueva_password)
         return self
+
+
+class TotpActivacionRequest(BaseModel):
+    current_password: str = Field(..., min_length=1, max_length=200)
+    codigo: str = Field(..., min_length=6, max_length=8)
+
+    @field_validator("codigo")
+    @classmethod
+    def limpiar_codigo(cls, value: str) -> str:
+        limpio = "".join(char for char in value if char.isdigit())
+        if len(limpio) != 6:
+            raise ValueError("El codigo TOTP debe tener 6 digitos.")
+        return limpio
+
+
+class TotpCodigoRequest(BaseModel):
+    codigo: str = Field(..., min_length=6, max_length=8)
+
+    @field_validator("codigo")
+    @classmethod
+    def limpiar_codigo(cls, value: str) -> str:
+        limpio = "".join(char for char in value if char.isdigit())
+        if len(limpio) != 6:
+            raise ValueError("El codigo TOTP debe tener 6 digitos.")
+        return limpio
+
+
+class TotpDesactivacionRequest(BaseModel):
+    current_password: str = Field(..., min_length=1, max_length=200)
+
+
+class TipoProyectoPresetResponse(BaseModel):
+    clave: str
+    nombre: str
+    descripcion: str
+    payload: dict[str, Any]
 
 
 class CalculoEscenarioRequest(EscenarioCreate):

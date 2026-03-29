@@ -12,7 +12,7 @@
             {% if modo == "editar" %}Actualizar presupuesto{% else %}Crear presupuesto{% endif %}
         </h1>
         <p class="mt-3 max-w-3xl text-black/65">
-            Carga cabecera, arma hasta dos escenarios y previsualiza el impacto economico en tiempo real sin salir del formulario.
+            Carga cabecera, arma hasta dos escenarios, aplica plantillas por tipo de proyecto y previsualiza el impacto economico en tiempo real.
         </p>
     </div>
     <div class="rounded-[1.5rem] border border-black/10 bg-white px-5 py-4 shadow-sm">
@@ -24,7 +24,7 @@
 
 <form id="presupuesto-form" class="grid gap-6">
     <section class="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <label class="field">
                 <span>Nombre del proyecto</span>
                 <input type="text" name="nombre_proyecto" required>
@@ -38,9 +38,45 @@
                 <input type="date" name="fecha" required>
             </label>
             <label class="field">
+                <span>Tipo de proyecto</span>
+                <select name="tipo_proyecto_clave" class="w-full rounded-[1.1rem] border border-black/10 bg-white px-4 py-3 outline-none transition focus:border-bosque">
+                    <option value="">Sin preset</option>
+                    {% for tipo in tipos_proyecto %}
+                    <option value="{{ tipo.clave }}">{{ tipo.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="field">
                 <span>Notas generales</span>
                 <textarea name="notas" rows="1" placeholder="Observaciones internas o comerciales"></textarea>
             </label>
+        </div>
+    </section>
+
+    <section class="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
+        <div class="mb-5 flex flex-col gap-3">
+            <div>
+                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-black/45">Tipos de proyecto</p>
+                <h2 class="mt-2 text-2xl font-black">Plantillas listas para novela, poesia, libro institucional y catalogo</h2>
+                <p class="mt-2 text-sm text-black/60">
+                    Cada plantilla precarga notas, escenarios e items frecuentes para arrancar mas rapido y con criterios consistentes.
+                </p>
+            </div>
+            <div class="grid gap-3 lg:grid-cols-4">
+                {% for tipo in tipos_proyecto %}
+                <article class="rounded-[1.3rem] border border-black/10 bg-hoja p-4">
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-ladrillo">{{ tipo.nombre }}</p>
+                    <p class="mt-2 text-sm text-black/65">{{ tipo.descripcion }}</p>
+                    <button
+                        type="button"
+                        class="tipo-proyecto-btn mt-4 w-full rounded-full border border-black/10 px-4 py-3 text-sm font-semibold transition hover:border-bosque hover:text-bosque"
+                        data-tipo-clave="{{ tipo.clave }}"
+                    >
+                        Aplicar plantilla
+                    </button>
+                </article>
+                {% endfor %}
+            </div>
         </div>
     </section>
 
@@ -57,7 +93,7 @@
         <div class="mb-5 rounded-[1.6rem] border border-black/10 bg-hoja p-4">
             <div class="mb-3 flex flex-col gap-1">
                 <p class="text-sm font-semibold uppercase tracking-[0.2em] text-black/45">Presets inteligentes</p>
-                <h3 class="text-xl font-black">ISBN, banner y diseño de tapas listos para insertar</h3>
+                <h3 class="text-xl font-black">ISBN, banner y diseno de tapas listos para insertar</h3>
                 <p class="text-sm text-black/60">Cada boton aplica o actualiza el item en el escenario con el monto configurado globalmente.</p>
             </div>
             <div class="grid gap-3 md:grid-cols-3">
@@ -200,6 +236,7 @@
     const NOTA_IMPRESION = "Cotizado manualmente en https://print.livriz.com";
     const configuracion = {{ configuracion | tojson }};
     const presetsCostos = {{ presets_costos | tojson }};
+    const tiposProyecto = {{ tipos_proyecto | tojson }};
     const presupuestoInicial = {{ presupuesto | tojson }};
     const modoFormulario = "{{ modo }}";
     const presupuestoId = "{{ presupuesto.id if presupuesto.id else '' }}";
@@ -215,6 +252,10 @@
 
     function obtenerDefinicionPreset(clave) {
         return presetsCostos.find((preset) => preset.clave === clave) || null;
+    }
+
+    function obtenerTipoProyecto(clave) {
+        return tiposProyecto.find((tipo) => tipo.clave === clave) || null;
     }
 
     function crearInputItem(item = {}) {
@@ -372,6 +413,39 @@
         aplicarPresetCosto(cards[indice], clavePreset);
     }
 
+    function aplicarTipoProyecto(claveTipo) {
+        const tipo = obtenerTipoProyecto(claveTipo);
+        if (!tipo) {
+            mostrarToast("No se encontro el tipo de proyecto seleccionado.", "error");
+            return;
+        }
+
+        const yaHayContenido = Array.from(escenariosContainer.querySelectorAll(".item-row")).some((row) => {
+            return row.querySelector('[data-field="monto"]').value !== "0" || row.querySelector('[data-field="nombre"]').value.trim() !== "";
+        });
+        if (yaHayContenido) {
+            const confirmar = window.confirm(`Se va a reemplazar la estructura actual por la plantilla ${tipo.nombre}. Queres continuar?`);
+            if (!confirmar) {
+                return;
+            }
+        }
+
+        form.querySelector('[name="tipo_proyecto_clave"]').value = tipo.clave;
+        form.querySelector('[name="notas"]').value = tipo.payload.notas || "";
+        escenariosContainer.innerHTML = "";
+        (tipo.payload.escenarios || []).slice(0, 2).forEach((escenario) => {
+            escenariosContainer.appendChild(
+                crearEscenarioCard({
+                    ...escenario,
+                    tipo_de_cambio_snapshot: escenario.tipo_de_cambio_snapshot ?? configuracion.tipo_de_cambio
+                })
+            );
+        });
+        refrescarBotonEscenario();
+        programarPreview();
+        mostrarToast(`Plantilla ${tipo.nombre} aplicada.`);
+    }
+
     function refrescarBotonEscenario() {
         botonAgregarEscenario.disabled = escenariosContainer.children.length >= 2;
         botonAgregarEscenario.classList.toggle("opacity-50", botonAgregarEscenario.disabled);
@@ -383,6 +457,7 @@
         form.querySelector('[name="cliente"]').value = presupuestoInicial.cliente || "";
         form.querySelector('[name="fecha"]').value = presupuestoInicial.fecha || new Date().toISOString().slice(0, 10);
         form.querySelector('[name="notas"]').value = presupuestoInicial.notas || "";
+        form.querySelector('[name="tipo_proyecto_clave"]').value = presupuestoInicial.tipo_proyecto_clave || "";
     }
 
     function serializarEscenario(card) {
@@ -407,6 +482,7 @@
             cliente: form.querySelector('[name="cliente"]').value.trim(),
             fecha: form.querySelector('[name="fecha"]').value,
             notas: form.querySelector('[name="notas"]').value.trim() || null,
+            tipo_proyecto_clave: form.querySelector('[name="tipo_proyecto_clave"]').value || null,
             escenarios: Array.from(escenariosContainer.children).map(serializarEscenario)
         };
     }
@@ -464,6 +540,10 @@
 
     document.querySelectorAll(".preset-global-btn").forEach((button) => {
         button.addEventListener("click", () => seleccionarEscenarioYAplicarPreset(button.dataset.presetClave));
+    });
+
+    document.querySelectorAll(".tipo-proyecto-btn").forEach((button) => {
+        button.addEventListener("click", () => aplicarTipoProyecto(button.dataset.tipoClave));
     });
 
     form.addEventListener("submit", async (event) => {

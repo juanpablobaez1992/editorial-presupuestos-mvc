@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-from collections import defaultdict
-from datetime import date
+from collections import Counter, defaultdict
+from datetime import date, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -13,7 +13,7 @@ from models.schemas import PresupuestoCreate, PresupuestoUpdate
 
 def obtener_todos(busqueda: str | None = None) -> list[dict[str, Any]]:
     query = """
-        SELECT id, nombre_proyecto, cliente, fecha, notas
+        SELECT id, nombre_proyecto, cliente, fecha, notas, tipo_proyecto_clave
         FROM presupuestos
     """
     parametros: list[Any] = []
@@ -44,7 +44,7 @@ def obtener_por_id(presupuesto_id: str, incluir_versiones: bool = False) -> dict
     with get_connection() as connection:
         presupuesto_row = connection.execute(
             """
-            SELECT id, nombre_proyecto, cliente, fecha, notas
+            SELECT id, nombre_proyecto, cliente, fecha, notas, tipo_proyecto_clave
             FROM presupuestos
             WHERE id = ?
             """,
@@ -65,6 +65,49 @@ def obtener_versiones(presupuesto_id: str) -> list[dict[str, Any]]:
         return _obtener_versiones(connection, presupuesto_id)
 
 
+def calcular_metricas_dashboard(presupuestos: list[dict[str, Any]]) -> dict[str, Any]:
+    hoy = date.today()
+    total = len(presupuestos)
+    presupuestos_mes = [
+        presupuesto
+        for presupuesto in presupuestos
+        if _parse_date(presupuesto["fecha"]).year == hoy.year and _parse_date(presupuesto["fecha"]).month == hoy.month
+    ]
+    ticket_promedio = round(
+        sum(float(presupuesto["total_ars_referencia"]) for presupuesto in presupuestos) / total,
+        2,
+    ) if total else 0.0
+    clientes = [presupuesto["cliente"].strip() for presupuesto in presupuestos if presupuesto.get("cliente")]
+    conteo_clientes = Counter(clientes)
+    cliente_top = conteo_clientes.most_common(1)[0] if conteo_clientes else None
+
+    presupuestos_dobles = [presupuesto for presupuesto in presupuestos if int(presupuesto["cantidad_escenarios"]) == 2]
+    porcentaje_dobles = round((len(presupuestos_dobles) / total) * 100, 2) if total else 0.0
+
+    copias_base = [
+        int(presupuesto.get("escenario_referencia_cantidad_copias") or 0)
+        for presupuesto in presupuestos
+        if int(presupuesto.get("escenario_referencia_cantidad_copias") or 0) > 0
+    ]
+    promedio_copias_base = round(sum(copias_base) / len(copias_base), 2) if copias_base else 0.0
+
+    tipos = [presupuesto.get("tipo_proyecto_clave") or "sin_tipo" for presupuesto in presupuestos]
+    tipo_top = Counter(tipos).most_common(1)[0] if tipos else None
+
+    return {
+        "total_presupuestos": total,
+        "presupuestos_mes_actual": len(presupuestos_mes),
+        "ticket_promedio_ars": ticket_promedio,
+        "clientes_unicos": len(set(clientes)),
+        "cliente_top_nombre": cliente_top[0] if cliente_top else "Sin datos",
+        "cliente_top_cantidad": cliente_top[1] if cliente_top else 0,
+        "porcentaje_dos_escenarios": porcentaje_dobles,
+        "promedio_copias_base": promedio_copias_base,
+        "tipo_proyecto_top": tipo_top[0] if tipo_top else "sin_tipo",
+        "tipo_proyecto_top_cantidad": tipo_top[1] if tipo_top else 0,
+    }
+
+
 def crear(
     datos: PresupuestoCreate,
     usuario: str | None = None,
@@ -76,8 +119,8 @@ def crear(
     with get_connection() as connection:
         connection.execute(
             """
-            INSERT INTO presupuestos (id, nombre_proyecto, cliente, fecha, notas)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO presupuestos (id, nombre_proyecto, cliente, fecha, notas, tipo_proyecto_clave)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 presupuesto_id,
@@ -85,6 +128,7 @@ def crear(
                 datos.cliente,
                 datos.fecha.isoformat(),
                 datos.notas,
+                datos.tipo_proyecto_clave,
             ),
         )
         _guardar_escenarios(connection, presupuesto_id, datos.escenarios)
@@ -113,7 +157,7 @@ def actualizar(presupuesto_id: str, datos: PresupuestoUpdate, usuario: str | Non
         connection.execute(
             """
             UPDATE presupuestos
-            SET nombre_proyecto = ?, cliente = ?, fecha = ?, notas = ?, updated_at = CURRENT_TIMESTAMP
+            SET nombre_proyecto = ?, cliente = ?, fecha = ?, notas = ?, tipo_proyecto_clave = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
             """,
             (
@@ -121,6 +165,7 @@ def actualizar(presupuesto_id: str, datos: PresupuestoUpdate, usuario: str | Non
                 datos.cliente,
                 datos.fecha.isoformat(),
                 datos.notas,
+                datos.tipo_proyecto_clave,
                 presupuesto_id,
             ),
         )
@@ -166,7 +211,7 @@ def restaurar_version(
         connection.execute(
             """
             UPDATE presupuestos
-            SET nombre_proyecto = ?, cliente = ?, fecha = ?, notas = ?, updated_at = CURRENT_TIMESTAMP
+            SET nombre_proyecto = ?, cliente = ?, fecha = ?, notas = ?, tipo_proyecto_clave = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
             """,
             (
@@ -174,6 +219,7 @@ def restaurar_version(
                 datos.cliente,
                 datos.fecha.isoformat(),
                 datos.notas,
+                datos.tipo_proyecto_clave,
                 presupuesto_id,
             ),
         )
@@ -206,6 +252,7 @@ def duplicar(presupuesto_id: str, usuario: str | None = None) -> dict[str, Any] 
         cliente=original["cliente"],
         fecha=date.today(),
         notas=original.get("notas"),
+        tipo_proyecto_clave=original.get("tipo_proyecto_clave"),
         escenarios=[
             {
                 "nombre": escenario["nombre"],
@@ -402,7 +449,7 @@ def _obtener_snapshot_actual(connection, presupuesto_id: str) -> dict[str, Any]:
         **dict(
             connection.execute(
                 """
-                SELECT id, nombre_proyecto, cliente, fecha, notas
+                SELECT id, nombre_proyecto, cliente, fecha, notas, tipo_proyecto_clave
                 FROM presupuestos
                 WHERE id = ?
                 """,
@@ -420,6 +467,7 @@ def _snapshot_desde_datos(datos: PresupuestoCreate | PresupuestoUpdate) -> dict[
         "cliente": payload["cliente"],
         "fecha": payload["fecha"],
         "notas": payload.get("notas"),
+        "tipo_proyecto_clave": payload.get("tipo_proyecto_clave"),
         "escenarios": [
             {
                 "nombre": escenario["nombre"],
@@ -446,6 +494,7 @@ def _snapshot_desde_presupuesto(presupuesto: dict[str, Any]) -> dict[str, Any]:
         "cliente": presupuesto["cliente"],
         "fecha": presupuesto["fecha"],
         "notas": presupuesto.get("notas"),
+        "tipo_proyecto_clave": presupuesto.get("tipo_proyecto_clave"),
         "escenarios": [
             {
                 "nombre": escenario["nombre"],
@@ -487,6 +536,8 @@ def _resumir_cambios_version(
         cambios.append("Se cambio la fecha")
     if (snapshot_anterior.get("notas") or "") != (snapshot_nuevo.get("notas") or ""):
         cambios.append("Se ajustaron las notas")
+    if snapshot_anterior.get("tipo_proyecto_clave") != snapshot_nuevo.get("tipo_proyecto_clave"):
+        cambios.append("Se cambio el tipo de proyecto")
 
     escenarios_anteriores = {escenario["nombre"].strip().lower(): escenario for escenario in snapshot_anterior["escenarios"]}
     escenarios_nuevos = {escenario["nombre"].strip().lower(): escenario for escenario in snapshot_nuevo["escenarios"]}
@@ -502,21 +553,15 @@ def _resumir_cambios_version(
         anterior = escenarios_anteriores[clave]
         nuevo = escenarios_nuevos[clave]
         if anterior["cantidad_copias"] != nuevo["cantidad_copias"]:
-            cambios.append(
-                f"{nuevo['nombre']}: copias {anterior['cantidad_copias']} -> {nuevo['cantidad_copias']}"
-            )
+            cambios.append(f"{nuevo['nombre']}: copias {anterior['cantidad_copias']} -> {nuevo['cantidad_copias']}")
         if round(float(anterior["porcentaje_ganancia"]), 2) != round(float(nuevo["porcentaje_ganancia"]), 2):
             cambios.append(
                 f"{nuevo['nombre']}: margen {anterior['porcentaje_ganancia']}% -> {nuevo['porcentaje_ganancia']}%"
             )
-
         total_anterior = calcular_escenario_completo(anterior)["total"]
         total_nuevo = calcular_escenario_completo(nuevo)["total"]
         if round(total_anterior, 2) != round(total_nuevo, 2):
-            cambios.append(
-                f"{nuevo['nombre']}: total {int(round(total_anterior))} -> {int(round(total_nuevo))} ARS"
-            )
-
+            cambios.append(f"{nuevo['nombre']}: total {int(round(total_anterior))} -> {int(round(total_nuevo))} ARS")
         items_anteriores = {item["nombre"].strip().lower(): item for item in anterior["items"]}
         items_nuevos = {item["nombre"].strip().lower(): item for item in nuevo["items"]}
         if items_anteriores.keys() != items_nuevos.keys():
@@ -581,3 +626,10 @@ def _seleccionar_escenario_referencia(escenarios: list[dict[str, Any]]) -> dict[
         escenarios,
         key=lambda escenario: (int(escenario["cantidad_copias"]), int(escenario.get("orden", 0))),
     )
+
+
+def _parse_date(valor: str) -> date:
+    try:
+        return datetime.fromisoformat(valor).date()
+    except ValueError:
+        return date.today()

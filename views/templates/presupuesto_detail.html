@@ -11,11 +11,15 @@
             <span>Cliente: <strong class="text-tinta">{{ presupuesto.cliente }}</strong></span>
             <span>Fecha: <strong class="text-tinta">{{ presupuesto.fecha }}</strong></span>
             <span>{{ presupuesto.cantidad_escenarios }} escenario{% if presupuesto.cantidad_escenarios != 1 %}s{% endif %}</span>
+            {% if presupuesto.tipo_proyecto_clave %}
+            <span>Tipo: <strong class="text-tinta">{{ presupuesto.tipo_proyecto_clave | replace("_", " ") | title }}</strong></span>
+            {% endif %}
         </div>
     </div>
     <div class="flex flex-wrap gap-3">
         <a href="/presupuestos/{{ presupuesto.id }}/editar" class="rounded-full border border-black/10 px-4 py-3 font-semibold transition hover:border-ladrillo hover:text-ladrillo">Editar</a>
         <a href="/presupuestos/{{ presupuesto.id }}/export" class="rounded-full border border-black/10 px-4 py-3 font-semibold transition hover:border-mostaza hover:text-ladrillo">Exportar XLSX</a>
+        <a href="/presupuestos/{{ presupuesto.id }}/export/pdf" class="rounded-full border border-black/10 px-4 py-3 font-semibold transition hover:border-bosque hover:text-bosque">Exportar PDF</a>
         <button id="duplicar-btn" class="rounded-full border border-black/10 px-4 py-3 font-semibold transition hover:border-bosque hover:text-bosque">Duplicar</button>
         <button id="eliminar-btn" class="rounded-full bg-[#8f332a] px-4 py-3 font-semibold text-white transition hover:bg-[#722920]">Eliminar</button>
     </div>

@@ -3,14 +3,22 @@ from __future__ import annotations
 import hmac
 from typing import Any
 
+import pyotp
 from pwdlib import PasswordHash
 
 from database import get_connection
 from settings import get_settings
-from models.schemas import CredencialesAdminUpdate, PasswordAdminUpdate
+from models.schemas import (
+    CredencialesAdminUpdate,
+    PasswordAdminUpdate,
+    TotpActivacionRequest,
+    TotpCodigoRequest,
+    TotpDesactivacionRequest,
+)
 
 
 password_hasher = PasswordHash.recommended()
+TOTP_ISSUER = "Firmamento Presupuestos"
 
 
 def obtener_credenciales_admin() -> dict[str, str]:
@@ -120,7 +128,7 @@ def autenticar_usuario(username: str, password: str, ip_address: str) -> dict[st
     if not (usuario_valido and password_valida):
         registrar_intento_fallido(username_normalizado, ip_address)
         nuevo_estado = obtener_estado_bloqueo(username_normalizado, ip_address)
-        mensaje = "Usuario o contraseña incorrectos."
+        mensaje = "Usuario o contrasena incorrectos."
         if not nuevo_estado["bloqueado"] and nuevo_estado["intentos_restantes"] > 0:
             mensaje += f" Intentos restantes: {nuevo_estado['intentos_restantes']}."
         else:
@@ -135,10 +143,12 @@ def autenticar_usuario(username: str, password: str, ip_address: str) -> dict[st
         }
 
     limpiar_intentos_fallidos(username_normalizado, ip_address)
+    estado_totp = obtener_estado_totp()
     return {
         "ok": True,
         "mensaje": "Autenticacion correcta.",
         "usuario": credenciales["username"],
+        "requiere_totp": bool(estado_totp["habilitado"]),
     }
 
 
@@ -200,3 +210,109 @@ def actualizar_password_admin(datos: PasswordAdminUpdate) -> dict[str, str]:
         connection.execute("DELETE FROM auth_intentos")
 
     return obtener_estado_credenciales()
+
+
+def obtener_estado_totp() -> dict[str, Any]:
+    credenciales = obtener_credenciales_admin()
+    with get_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT clave, valor
+            FROM configuracion
+            WHERE clave IN ('auth_totp_secret', 'auth_totp_enabled')
+            """
+        ).fetchall()
+    data = {row["clave"]: row["valor"] for row in rows}
+    secret = data.get("auth_totp_secret", "").strip()
+    habilitado = data.get("auth_totp_enabled", "0").strip() == "1" and bool(secret)
+    otpauth_url = ""
+    manual_entry_key = ""
+    if secret:
+        manual_entry_key = _formatear_secret(secret)
+        otpauth_url = pyotp.TOTP(secret).provisioning_uri(name=credenciales["username"], issuer_name=TOTP_ISSUER)
+    return {
+        "habilitado": habilitado,
+        "secret_present": bool(secret),
+        "secret": secret,
+        "manual_entry_key": manual_entry_key,
+        "otpauth_url": otpauth_url,
+        "issuer": TOTP_ISSUER,
+    }
+
+
+def preparar_totp() -> dict[str, Any]:
+    estado = obtener_estado_totp()
+    if estado["secret_present"]:
+        return estado
+
+    secret = pyotp.random_base32()
+    with get_connection() as connection:
+        connection.executemany(
+            """
+            INSERT INTO configuracion (clave, valor, updated_at)
+            VALUES (?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(clave) DO UPDATE SET
+                valor = excluded.valor,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            [
+                ("auth_totp_secret", secret),
+                ("auth_totp_enabled", "0"),
+            ],
+        )
+    return obtener_estado_totp()
+
+
+def activar_totp(datos: TotpActivacionRequest) -> dict[str, Any]:
+    credenciales = obtener_credenciales_admin()
+    if not password_hasher.verify(datos.current_password, credenciales["password_hash"]):
+        raise ValueError("La contrasena actual no es correcta.")
+
+    estado = preparar_totp()
+    if not pyotp.TOTP(estado["secret"]).verify(datos.codigo, valid_window=1):
+        raise ValueError("El codigo TOTP no es valido.")
+
+    with get_connection() as connection:
+        connection.execute(
+            """
+            INSERT INTO configuracion (clave, valor, updated_at)
+            VALUES ('auth_totp_enabled', '1', CURRENT_TIMESTAMP)
+            ON CONFLICT(clave) DO UPDATE SET
+                valor = '1',
+                updated_at = CURRENT_TIMESTAMP
+            """
+        )
+    return obtener_estado_totp()
+
+
+def desactivar_totp(datos: TotpDesactivacionRequest) -> dict[str, Any]:
+    credenciales = obtener_credenciales_admin()
+    if not password_hasher.verify(datos.current_password, credenciales["password_hash"]):
+        raise ValueError("La contrasena actual no es correcta.")
+
+    with get_connection() as connection:
+        connection.executemany(
+            """
+            INSERT INTO configuracion (clave, valor, updated_at)
+            VALUES (?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(clave) DO UPDATE SET
+                valor = excluded.valor,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            [
+                ("auth_totp_enabled", "0"),
+                ("auth_totp_secret", ""),
+            ],
+        )
+    return obtener_estado_totp()
+
+
+def verificar_totp(datos: TotpCodigoRequest) -> bool:
+    estado = obtener_estado_totp()
+    if not estado["habilitado"] or not estado["secret"]:
+        return False
+    return bool(pyotp.TOTP(estado["secret"]).verify(datos.codigo, valid_window=1))
+
+
+def _formatear_secret(secret: str) -> str:
+    return " ".join(secret[i : i + 4] for i in range(0, len(secret), 4))

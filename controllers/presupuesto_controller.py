@@ -9,8 +9,9 @@ from controllers.controller_utils import construir_contexto, exigir_login_api, e
 from models import presupuesto_model
 from models.calculations import calcular_escenario_completo
 from models.config_model import obtener_catalogo_presets, obtener_configuracion
+from models.project_template_model import obtener_tipos_proyecto
 from models.schemas import CalculoEscenarioRequest, PresupuestoCreate, PresupuestoUpdate
-from services.export_service import generar_excel_presupuesto
+from services.export_service import generar_excel_presupuesto, generar_pdf_presupuesto
 from views import templates
 
 
@@ -23,12 +24,14 @@ async def dashboard(request: Request, q: str = Query(default="")):
     if isinstance(auth_guard, RedirectResponse):
         return auth_guard
     presupuestos = presupuesto_model.obtener_todos(q or None)
+    metricas = presupuesto_model.calcular_metricas_dashboard(presupuestos)
     return templates.TemplateResponse(
         request,
         "dashboard.html",
         construir_contexto(
             request,
             presupuestos=presupuestos,
+            metricas=metricas,
             busqueda=q,
         ),
     )
@@ -41,11 +44,13 @@ async def formulario_nuevo_presupuesto(request: Request):
         return auth_guard
     configuracion = obtener_configuracion()
     presets_costos = obtener_catalogo_presets(configuracion)
+    tipos_proyecto = obtener_tipos_proyecto()
     presupuesto_inicial = {
         "nombre_proyecto": "",
         "cliente": "",
         "fecha": date.today().isoformat(),
         "notas": "",
+        "tipo_proyecto_clave": None,
         "escenarios": [
             {
                 "nombre": "Escenario 1",
@@ -76,6 +81,7 @@ async def formulario_nuevo_presupuesto(request: Request):
             presupuesto=presupuesto_inicial,
             configuracion=configuracion,
             presets_costos=presets_costos,
+            tipos_proyecto=tipos_proyecto,
         ),
     )
 
@@ -121,6 +127,7 @@ async def editar_presupuesto(request: Request, presupuesto_id: str):
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado.")
     configuracion = obtener_configuracion()
     presets_costos = obtener_catalogo_presets(configuracion)
+    tipos_proyecto = obtener_tipos_proyecto()
     return templates.TemplateResponse(
         request,
         "presupuesto_form.html",
@@ -130,6 +137,7 @@ async def editar_presupuesto(request: Request, presupuesto_id: str):
             presupuesto=presupuesto,
             configuracion=configuracion,
             presets_costos=presets_costos,
+            tipos_proyecto=tipos_proyecto,
         ),
     )
 
@@ -189,6 +197,25 @@ async def exportar_presupuesto(request: Request, presupuesto_id: str):
         archivo,
         headers=headers,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+@router.get("/presupuestos/{presupuesto_id}/export/pdf")
+async def exportar_presupuesto_pdf(request: Request, presupuesto_id: str):
+    exigir_login_api(request)
+    presupuesto = presupuesto_model.obtener_por_id(presupuesto_id)
+    if presupuesto is None:
+        raise HTTPException(status_code=404, detail="Presupuesto no encontrado.")
+
+    archivo = generar_pdf_presupuesto(presupuesto)
+    nombre = presupuesto["nombre_proyecto"].replace(" ", "_").lower()
+    headers = {
+        "Content-Disposition": f'attachment; filename="{nombre or "presupuesto"}.pdf"'
+    }
+    return StreamingResponse(
+        archivo,
+        headers=headers,
+        media_type="application/pdf",
     )
 
 

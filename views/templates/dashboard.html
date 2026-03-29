@@ -3,31 +3,54 @@
 {% block title %}Dashboard | Presupuestos{% endblock %}
 
 {% block content %}
-<section class="mb-8 grid gap-5 lg:grid-cols-[1.4fr_0.6fr]">
+<section class="mb-8 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
     <div class="rounded-[2rem] border border-black/10 bg-white p-8 shadow-sm">
         <p class="mb-2 text-sm font-semibold uppercase tracking-[0.25em] text-ladrillo">Panel central</p>
-        <h1 class="max-w-3xl text-4xl font-black leading-tight">Presupuestos listos para cotizar, comparar y exportar sin perder contexto.</h1>
+        <h1 class="max-w-3xl text-4xl font-black leading-tight">Presupuestos listos para cotizar, comparar, auditar y exportar en un mismo flujo.</h1>
         <p class="mt-4 max-w-2xl text-base text-black/65">
-            Busqueda por proyecto o cliente, detalle por escenarios y exportacion directa a Excel para seguir el trabajo comercial sin friccion.
+            Ahora el tablero tambien resume actividad del mes, ticket promedio, cliente mas recurrente y mix de escenarios para leer el negocio sin salir del dashboard.
         </p>
     </div>
-    <div class="grid gap-4">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
         <article class="rounded-[2rem] border border-black/10 bg-bosque p-6 text-white shadow-sm">
             <p class="text-sm uppercase tracking-[0.22em] text-white/70">Total registrados</p>
-            <p class="mt-3 text-4xl font-black">{{ presupuestos|length }}</p>
+            <p class="mt-3 text-4xl font-black">{{ metricas.total_presupuestos }}</p>
         </article>
         <article class="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
-            <p class="text-sm uppercase tracking-[0.22em] text-black/45">Vista</p>
-            <p class="mt-3 text-xl font-bold">Comparacion editorial en un mismo lugar</p>
+            <p class="text-sm uppercase tracking-[0.22em] text-black/45">Ticket promedio</p>
+            <p class="mt-3 text-2xl font-black">{{ metricas.ticket_promedio_ars | ars }}</p>
         </article>
     </div>
+</section>
+
+<section class="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <article class="rounded-[1.7rem] border border-black/10 bg-white p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-[0.2em] text-black/45">Mes actual</p>
+        <p class="mt-2 text-3xl font-black">{{ metricas.presupuestos_mes_actual }}</p>
+        <p class="mt-2 text-sm text-black/60">Presupuestos creados este mes.</p>
+    </article>
+    <article class="rounded-[1.7rem] border border-black/10 bg-white p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-[0.2em] text-black/45">Cliente top</p>
+        <p class="mt-2 text-2xl font-black">{{ metricas.cliente_top_nombre }}</p>
+        <p class="mt-2 text-sm text-black/60">{{ metricas.cliente_top_cantidad }} presupuesto{% if metricas.cliente_top_cantidad != 1 %}s{% endif %} asociados.</p>
+    </article>
+    <article class="rounded-[1.7rem] border border-black/10 bg-white p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-[0.2em] text-black/45">Escenarios dobles</p>
+        <p class="mt-2 text-3xl font-black">{{ metricas.porcentaje_dos_escenarios | porcentaje }}</p>
+        <p class="mt-2 text-sm text-black/60">Proporcion de presupuestos con comparacion de dos tiradas.</p>
+    </article>
+    <article class="rounded-[1.7rem] border border-black/10 bg-white p-5 shadow-sm">
+        <p class="text-xs uppercase tracking-[0.2em] text-black/45">Copias base</p>
+        <p class="mt-2 text-3xl font-black">{{ metricas.promedio_copias_base | numero }}</p>
+        <p class="mt-2 text-sm text-black/60">Promedio de copias en el escenario de referencia.</p>
+    </article>
 </section>
 
 <section class="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm">
     <div class="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
             <h2 class="text-2xl font-black">Presupuestos</h2>
-            <p class="text-sm text-black/60">Tabla general con accesos rapidos a detalle, edicion y exportacion.</p>
+            <p class="text-sm text-black/60">Tabla general con accesos rapidos a detalle, edicion y exportaciones comercial e interna.</p>
         </div>
         <form method="get" action="/" class="flex gap-3">
             <input
@@ -59,7 +82,12 @@
                 <tr class="border-b border-black/5 align-top hover:bg-black/[0.02]">
                     <td class="px-4 py-4">
                         <p class="font-bold">{{ presupuesto.nombre_proyecto }}</p>
-                        <p class="mt-1 text-xs text-black/50">{{ presupuesto.cantidad_escenarios }} escenario{% if presupuesto.cantidad_escenarios != 1 %}s{% endif %}</p>
+                        <div class="mt-1 flex flex-wrap gap-2 text-xs text-black/50">
+                            <span>{{ presupuesto.cantidad_escenarios }} escenario{% if presupuesto.cantidad_escenarios != 1 %}s{% endif %}</span>
+                            {% if presupuesto.tipo_proyecto_clave %}
+                            <span class="rounded-full bg-hoja px-2 py-1 font-semibold text-black/65">{{ presupuesto.tipo_proyecto_clave | replace("_", " ") | title }}</span>
+                            {% endif %}
+                        </div>
                     </td>
                     <td class="px-4 py-4">{{ presupuesto.cliente }}</td>
                     <td class="px-4 py-4">{{ presupuesto.fecha }}</td>
@@ -80,6 +108,7 @@
                             <a href="/presupuestos/{{ presupuesto.id }}" class="rounded-full border border-black/10 px-3 py-2 font-semibold transition hover:border-bosque hover:text-bosque">Ver</a>
                             <a href="/presupuestos/{{ presupuesto.id }}/editar" class="rounded-full border border-black/10 px-3 py-2 font-semibold transition hover:border-ladrillo hover:text-ladrillo">Editar</a>
                             <a href="/presupuestos/{{ presupuesto.id }}/export" class="rounded-full border border-black/10 px-3 py-2 font-semibold transition hover:border-mostaza hover:text-ladrillo">XLSX</a>
+                            <a href="/presupuestos/{{ presupuesto.id }}/export/pdf" class="rounded-full border border-black/10 px-3 py-2 font-semibold transition hover:border-bosque hover:text-bosque">PDF</a>
                         </div>
                     </td>
                 </tr>
@@ -90,7 +119,7 @@
     {% else %}
     <div class="rounded-[1.5rem] border border-dashed border-black/15 bg-hoja p-10 text-center">
         <h3 class="text-2xl font-black">Todavia no hay presupuestos cargados</h3>
-        <p class="mt-2 text-black/60">Empeza creando el primero y desde ahi ya podes duplicar, editar y exportar.</p>
+        <p class="mt-2 text-black/60">Empeza creando el primero y desde ahi ya podes duplicar, editar, exportar y seguir su historial.</p>
         <a href="/presupuestos/nuevo" class="mt-5 inline-flex rounded-full bg-bosque px-5 py-3 font-semibold text-white">Crear presupuesto</a>
     </div>
     {% endif %}
