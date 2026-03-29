@@ -82,8 +82,8 @@ async def formulario_nuevo_presupuesto(request: Request):
 
 @router.post("/presupuestos")
 async def crear_presupuesto(request: Request, datos: PresupuestoCreate):
-    exigir_login_api(request)
-    nuevo = presupuesto_model.crear(datos)
+    usuario = exigir_login_api(request)
+    nuevo = presupuesto_model.crear(datos, usuario=usuario)
     return JSONResponse(
         {
             "ok": True,
@@ -98,7 +98,7 @@ async def ver_presupuesto(request: Request, presupuesto_id: str):
     auth_guard = exigir_login_html(request)
     if isinstance(auth_guard, RedirectResponse):
         return auth_guard
-    presupuesto = presupuesto_model.obtener_por_id(presupuesto_id)
+    presupuesto = presupuesto_model.obtener_por_id(presupuesto_id, incluir_versiones=True)
     if presupuesto is None:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado.")
     return templates.TemplateResponse(
@@ -136,8 +136,8 @@ async def editar_presupuesto(request: Request, presupuesto_id: str):
 
 @router.put("/presupuestos/{presupuesto_id}")
 async def actualizar_presupuesto(request: Request, presupuesto_id: str, datos: PresupuestoUpdate):
-    exigir_login_api(request)
-    actualizado = presupuesto_model.actualizar(presupuesto_id, datos)
+    usuario = exigir_login_api(request)
+    actualizado = presupuesto_model.actualizar(presupuesto_id, datos, usuario=usuario)
     if actualizado is None:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado.")
     return JSONResponse(
@@ -160,8 +160,8 @@ async def eliminar_presupuesto(request: Request, presupuesto_id: str):
 
 @router.post("/presupuestos/{presupuesto_id}/duplicar")
 async def duplicar_presupuesto(request: Request, presupuesto_id: str):
-    exigir_login_api(request)
-    duplicado = presupuesto_model.duplicar(presupuesto_id)
+    usuario = exigir_login_api(request)
+    duplicado = presupuesto_model.duplicar(presupuesto_id, usuario=usuario)
     if duplicado is None:
         raise HTTPException(status_code=404, detail="Presupuesto no encontrado.")
     return JSONResponse(
@@ -196,3 +196,18 @@ async def exportar_presupuesto(request: Request, presupuesto_id: str):
 async def api_calcular(request: Request, datos: CalculoEscenarioRequest):
     exigir_login_api(request)
     return JSONResponse(calcular_escenario_completo(datos.model_dump()))
+
+
+@router.post("/presupuestos/{presupuesto_id}/versiones/{version_id}/restaurar")
+async def restaurar_version_presupuesto(request: Request, presupuesto_id: str, version_id: str):
+    usuario = exigir_login_api(request)
+    presupuesto = presupuesto_model.restaurar_version(presupuesto_id, version_id, usuario=usuario)
+    if presupuesto is None:
+        raise HTTPException(status_code=404, detail="Version o presupuesto no encontrado.")
+    return JSONResponse(
+        {
+            "ok": True,
+            "presupuesto": presupuesto,
+            "redirect_url": f"/presupuestos/{presupuesto_id}",
+        }
+    )

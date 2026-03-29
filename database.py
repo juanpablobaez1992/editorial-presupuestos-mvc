@@ -69,12 +69,26 @@ def init_database() -> None:
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
 
+            CREATE TABLE IF NOT EXISTS presupuesto_versiones (
+                id TEXT PRIMARY KEY,
+                presupuesto_id TEXT NOT NULL,
+                version_num INTEGER NOT NULL,
+                evento TEXT NOT NULL,
+                resumen_cambios TEXT NOT NULL,
+                snapshot_json TEXT NOT NULL,
+                created_by TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (presupuesto_id) REFERENCES presupuestos (id) ON DELETE CASCADE,
+                UNIQUE (presupuesto_id, version_num)
+            );
+
             CREATE INDEX IF NOT EXISTS idx_presupuestos_fecha ON presupuestos (fecha DESC);
             CREATE INDEX IF NOT EXISTS idx_presupuestos_nombre ON presupuestos (nombre_proyecto);
             CREATE INDEX IF NOT EXISTS idx_presupuestos_cliente ON presupuestos (cliente);
             CREATE INDEX IF NOT EXISTS idx_escenarios_presupuesto ON escenarios (presupuesto_id, orden);
             CREATE INDEX IF NOT EXISTS idx_items_escenario ON items (escenario_id, orden);
             CREATE INDEX IF NOT EXISTS idx_auth_intentos_usuario_ip ON auth_intentos (username, ip_address, created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_presupuesto_versiones_presupuesto ON presupuesto_versiones (presupuesto_id, version_num DESC);
             """
         )
 

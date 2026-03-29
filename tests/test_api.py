@@ -4,6 +4,29 @@ from datetime import date
 
 from fastapi.testclient import TestClient
 
+import database
+
+
+def _payload_presupuesto_demo() -> dict:
+    return {
+        "nombre_proyecto": "Libro con historial",
+        "cliente": "Cliente Demo",
+        "fecha": date(2026, 3, 28).isoformat(),
+        "notas": "Version inicial",
+        "escenarios": [
+            {
+                "nombre": "50 copias",
+                "cantidad_copias": 50,
+                "porcentaje_ganancia": 45,
+                "tipo_de_cambio_snapshot": 1400,
+                "items": [
+                    {"nombre": "Impresion", "monto": 120000, "nota": None},
+                    {"nombre": "ISBN", "monto": 50000, "nota": "Preset base de registro editorial."},
+                ],
+            }
+        ],
+    }
+
 
 def test_healthcheck_responde_ok(client: TestClient) -> None:
     response = client.get("/health")
@@ -96,6 +119,72 @@ def test_crear_presupuesto_con_presets_y_escenarios(authenticated_client: TestCl
     assert body["escenarios"][0]["items"][0]["nota"] == "Cotizado manualmente en https://print.livriz.com"
 
 
+def test_crear_presupuesto_registra_version_inicial(authenticated_client: TestClient) -> None:
+    response = authenticated_client.post("/presupuestos", json=_payload_presupuesto_demo())
+
+    assert response.status_code == 200
+    presupuesto_id = response.json()["presupuesto"]["id"]
+
+    with database.get_connection() as connection:
+        versiones = connection.execute(
+            """
+            SELECT version_num, evento, resumen_cambios, created_by
+            FROM presupuesto_versiones
+            WHERE presupuesto_id = ?
+            ORDER BY version_num ASC
+            """,
+            (presupuesto_id,),
+        ).fetchall()
+
+    assert len(versiones) == 1
+    assert versiones[0]["version_num"] == 1
+    assert versiones[0]["evento"] == "creacion"
+    assert versiones[0]["created_by"] == "admin"
+    assert "Version inicial" in versiones[0]["resumen_cambios"]
+
+
+def test_detalle_muestra_historial_de_versiones(authenticated_client: TestClient) -> None:
+    crear = authenticated_client.post("/presupuestos", json=_payload_presupuesto_demo())
+    presupuesto_id = crear.json()["presupuesto"]["id"]
+
+    response = authenticated_client.get(f"/presupuestos/{presupuesto_id}")
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Historial" in html
+    assert "Version 1" in html
+    assert "Actual" in html
+
+
+def test_actualizar_presupuesto_registra_nueva_version_con_cambios(authenticated_client: TestClient) -> None:
+    crear = authenticated_client.post("/presupuestos", json=_payload_presupuesto_demo())
+    presupuesto_id = crear.json()["presupuesto"]["id"]
+    payload = _payload_presupuesto_demo()
+    payload["cliente"] = "Cliente Actualizado"
+    payload["escenarios"][0]["cantidad_copias"] = 80
+    payload["escenarios"][0]["items"][0]["monto"] = 160000
+
+    response = authenticated_client.put(f"/presupuestos/{presupuesto_id}", json=payload)
+
+    assert response.status_code == 200
+    with database.get_connection() as connection:
+        versiones = connection.execute(
+            """
+            SELECT version_num, evento, resumen_cambios, created_by
+            FROM presupuesto_versiones
+            WHERE presupuesto_id = ?
+            ORDER BY version_num ASC
+            """,
+            (presupuesto_id,),
+        ).fetchall()
+
+    assert len(versiones) == 2
+    assert versiones[1]["version_num"] == 2
+    assert versiones[1]["evento"] == "actualizacion"
+    assert versiones[1]["created_by"] == "admin"
+    assert "cliente" in versiones[1]["resumen_cambios"].lower() or "copias" in versiones[1]["resumen_cambios"].lower()
+
+
 def test_validacion_exige_impresion_en_cada_escenario(authenticated_client: TestClient) -> None:
     payload = {
         "nombre_proyecto": "Invalido",
@@ -149,6 +238,54 @@ def test_validacion_rechaza_nombres_duplicados_de_escenarios(authenticated_clien
 
     assert response.status_code == 422
     assert "unicos" in response.text
+
+
+def test_restaurar_version_revierte_el_presupuesto(authenticated_client: TestClient) -> None:
+    crear = authenticated_client.post("/presupuestos", json=_payload_presupuesto_demo())
+    presupuesto_id = crear.json()["presupuesto"]["id"]
+
+    payload_editado = _payload_presupuesto_demo()
+    payload_editado["cliente"] = "Cliente Editado"
+    payload_editado["notas"] = "Version editada"
+    payload_editado["escenarios"][0]["cantidad_copias"] = 90
+    payload_editado["escenarios"][0]["items"][0]["monto"] = 180000
+    actualizar = authenticated_client.put(f"/presupuestos/{presupuesto_id}", json=payload_editado)
+    assert actualizar.status_code == 200
+
+    with database.get_connection() as connection:
+        version_inicial = connection.execute(
+            """
+            SELECT id
+            FROM presupuesto_versiones
+            WHERE presupuesto_id = ? AND version_num = 1
+            """,
+            (presupuesto_id,),
+        ).fetchone()
+
+    restaurar = authenticated_client.post(
+        f"/presupuestos/{presupuesto_id}/versiones/{version_inicial['id']}/restaurar"
+    )
+
+    assert restaurar.status_code == 200
+    presupuesto = restaurar.json()["presupuesto"]
+    assert presupuesto["cliente"] == "Cliente Demo"
+    assert presupuesto["notas"] == "Version inicial"
+    assert presupuesto["escenarios"][0]["cantidad_copias"] == 50
+
+    with database.get_connection() as connection:
+        versiones = connection.execute(
+            """
+            SELECT version_num, evento, resumen_cambios
+            FROM presupuesto_versiones
+            WHERE presupuesto_id = ?
+            ORDER BY version_num ASC
+            """,
+            (presupuesto_id,),
+        ).fetchall()
+
+    assert len(versiones) == 3
+    assert versiones[2]["evento"] == "restauracion"
+    assert "version 1" in versiones[2]["resumen_cambios"].lower()
 
 
 def test_login_bloquea_ruta_api_sin_sesion(client: TestClient) -> None:
